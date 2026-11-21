@@ -1,0 +1,14 @@
+{
+  "name": "Μαζί στην Εξωσωματική",
+  "short_name": "Μαζί IVF",
+  "description": "Ο προσωπικός σου βοηθός για τον κύκλο εξωσωματικής: φάρμακα, ραντεβού, συμπτώματα, γνώση και ψυχολογική στήριξη.",
+  "lang": "el",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#fbf6f2",
+  "theme_color": "#2f7f7a",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
