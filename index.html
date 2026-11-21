@@ -584,9 +584,9 @@ V.coach=()=>{
    <div class="card" style="margin-top:16px"><div class="row between"><h2>Για τη φάση σας: ${pc.t}</h2>${S.cycle.protocol?'':'<a class="btn ghost" href="#cycle">Ρύθμισε τον κύκλο →</a>'}</div><p class="muted">${pc.x}</p>
     <div class="grid g2"><div><h3>Για εσένα</h3>${pc.me.map(id=>exCard(id)).join('')}</div><div><h3>Για το ζευγάρι</h3>${pc.co.map(id=>exCard(id)).join('')}</div></div></div>
    <div style="margin-top:16px">${varvaraCard()}</div>
-   <div class="grid g2" style="margin-top:16px">
+   <div class="grid" style="margin-top:16px">
     <div class="card soft"><h3>Πότε να ζητήσω επαγγελματική βοήθεια</h3><ul class="small"><li>Θλίψη ή άγχος σχεδόν κάθε μέρα για πάνω από 2 εβδομάδες.</li><li>Δυσκολία στον ύπνο, στη δουλειά ή στις σχέσεις.</li><li>Συνεχείς καβγάδες ή απομάκρυνση στο ζευγάρι.</li><li>Σκέψεις ότι δεν αξίζει να ζεις.</li></ul></div>
-    <div class="card soft"><h3>Στήριξη από ειδικό</h3><p class="small">Μια ψυχολόγος με εμπειρία στη γονιμότητα μπορεί να σας στηρίξει ατομικά ή ως ζευγάρι, σε κάθε φάση. Ξεκινήστε ακολουθώντας τη Βαρβάρα:</p><div class="row">${socialBtns('lil sm')}</div><p class="small muted" style="margin-top:10px">Σε έκτακτη ανάγκη: <a href="tel:166">166</a> · <a href="tel:112">112</a></p></div>
+    
    </div>`}
   if(sub==='me'){body=`<p class="muted">Ασκήσεις από τη γνωσιακή συμπεριφορική θεραπεία, τη θεραπεία αποδοχής και δέσμευσης και την ενσυνειδητότητα. Λίγα λεπτά την ημέρα.</p>
    <div class="grid g2"><div>${Object.keys(EX).filter(k=>EX[k].who==='me').map(id=>exCard(id)).join('')}</div>
