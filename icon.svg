@@ -6,8 +6,14 @@
     </linearGradient>
   </defs>
   <rect width="512" height="512" rx="112" fill="url(#g)"/>
-  <circle cx="256" cy="256" r="132" fill="none" stroke="#fff" stroke-width="22" opacity=".95"/>
-  <circle cx="226" cy="236" r="44" fill="#fff"/>
-  <circle cx="292" cy="282" r="34" fill="#fff" opacity=".85"/>
-  <circle cx="300" cy="206" r="18" fill="#fff" opacity=".7"/>
+  <circle cx="256" cy="268" r="150" fill="#fff"/>
+  <circle cx="256" cy="268" r="150" fill="none" stroke="#fde7df" stroke-width="14"/>
+  <rect x="236" y="88" width="40" height="34" rx="10" fill="#fff"/>
+  <g fill="#e9775a">
+    <circle cx="256" cy="148" r="9"/><circle cx="376" cy="268" r="9"/><circle cx="256" cy="388" r="9"/><circle cx="136" cy="268" r="9"/>
+  </g>
+  <path d="M256 268 L256 180" stroke="#2f7f7a" stroke-width="16" stroke-linecap="round"/>
+  <path d="M256 268 L318 300" stroke="#2f7f7a" stroke-width="16" stroke-linecap="round"/>
+  <path d="M256 330c-30-22-50-38-50-58a22 22 0 0 1 50-12 22 22 0 0 1 50 12c0 20-20 36-50 58z" fill="#e9775a" opacity=".9" transform="translate(0,-10) scale(1) "/>
+  <circle cx="256" cy="268" r="12" fill="#2f7f7a"/>
 </svg>
