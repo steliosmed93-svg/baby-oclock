@@ -34,7 +34,7 @@ header.top{position:sticky;top:0;z-index:20;background:rgba(251,246,242,.92);bac
 .brand{white-space:nowrap;display:flex;align-items:center;gap:10px;font-weight:700;text-decoration:none;color:var(--ink);font-size:1.05rem}
 .brand img{width:34px;height:34px}
 .deskNav{display:none;margin-left:auto;gap:2px;flex-wrap:nowrap}
-.deskNav a{padding:7px 10px;border-radius:999px;text-decoration:none;color:var(--muted);font-weight:500;font-size:.88rem}
+.deskNav a{white-space:nowrap;padding:7px 9px;border-radius:999px;text-decoration:none;color:var(--muted);font-weight:500;font-size:.88rem}
 .deskNav a.on{background:var(--teal-soft);color:var(--teal)}
 main{max-width:1100px;margin:0 auto;padding:18px}
 .tabbar{position:fixed;left:0;right:0;bottom:0;z-index:30;background:#fff;border-top:1px solid var(--line);display:flex;justify-content:space-around;padding:6px 4px calc(6px + env(safe-area-inset-bottom))}
@@ -114,6 +114,22 @@ details .inner{padding:0 16px 14px}
 table{width:100%;border-collapse:collapse;font-size:.92rem}
 th,td{text-align:left;padding:8px;border-bottom:1px solid var(--line);vertical-align:top}
 .foot{max-width:1100px;margin:10px auto 0;padding:0 18px 20px;font-size:.82rem;color:var(--muted)}
+.subtabs{display:flex;gap:6px;overflow-x:auto;margin:6px 0 18px;padding-bottom:4px;scrollbar-width:none}
+.subtabs a{white-space:nowrap;padding:8px 14px;border-radius:999px;background:#fff;border:1px solid var(--line);text-decoration:none;color:var(--muted);font-weight:600;font-size:.9rem}
+.subtabs a.on{background:var(--lilac);border-color:var(--lilac);color:#fff}
+.coachHero{background:linear-gradient(135deg,#8a78c2 0%,#b58fc9 45%,#e9775a 100%);color:#fff;border:0}
+.coachHero .pill{background:rgba(255,255,255,.22);color:#fff}
+.coachMini{background:linear-gradient(180deg,#fff 0%,var(--lilac-soft) 100%)}
+.scale{display:grid;grid-template-columns:repeat(11,1fr);gap:4px;margin:10px 0}
+.scale button{border:0;border-radius:10px;padding:10px 0;font:inherit;font-weight:700;cursor:pointer;background:hsl(var(--h),60%,92%);color:hsl(var(--h),45%,30%)}
+.scale button.on{background:hsl(var(--h),55%,45%);color:#fff;transform:scale(1.08)}
+.vcard{border-color:#d9d0f0;background:linear-gradient(135deg,#fff 0%,var(--lilac-soft) 100%)}
+.vav{width:64px;height:64px;border-radius:50%;display:grid;place-items:center;font-weight:700;font-size:1.3rem;color:#fff;background:linear-gradient(135deg,#8a78c2,#e9775a);flex:none}
+.btn.lil{background:var(--lilac)}
+details.ex summary{font-weight:600}
+.vstrip{background:var(--lilac-soft);border-top:1px solid #ddd3f3;margin-top:28px}
+.vin{max-width:1100px;margin:0 auto;padding:12px 18px;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;font-size:.9rem;color:#4b3f7a}
+.vin a{color:#5e4c9c;font-weight:600}
 .sectionTitle{display:flex;align-items:baseline;justify-content:space-between;margin:26px 0 10px}
 </style>
 </head>
@@ -123,6 +139,7 @@ th,td{text-align:left;padding:8px;border-bottom:1px solid var(--line);vertical-a
   <nav class="deskNav" id="deskNav"></nav>
 </div></header>
 <main id="app"></main>
+<div class="vstrip"><div class="vin"><span><b>Fertility Psy Coach:</b> Βαρβάρα Παπασιδέρη, ψυχολόγος</span><span class="row" style="gap:8px"><a href="https://www.tiktok.com/@ask.varvara.psy" target="_blank" rel="noopener">TikTok @ask.varvara.psy</a><a href="https://www.instagram.com/varvara_papasideri/" target="_blank" rel="noopener">Instagram @varvara_papasideri</a></span></div></div>
 <p class="foot">Η εφαρμογή είναι εργαλείο οργάνωσης και ενημέρωσης. Δεν αντικαθιστά τις οδηγίες της κλινικής ή του γιατρού σου. Τα δεδομένα σου αποθηκεύονται μόνο σε αυτή τη συσκευή.</p>
 <nav class="tabbar" id="tabbar"></nav>
 <div class="toast" id="toast"></div>
@@ -132,6 +149,7 @@ th,td{text-align:left;padding:8px;border-bottom:1px solid var(--line);vertical-a
 const KEY='maziivf.v1';
 const blank={profile:{name:'',onboarded:false},clinic:{name:'',doctor:'',phone:'',lab:'',email:'',address:''},
   cycle:{protocol:'',start:'',trigger:'',opu:'',transfer:'',stage:'5',beta:'',appointments:[]},
+  coach:{done:{},notes:{},records:[],checkins:[],stress:{}},
   meds:[],taken:{},scans:[],logs:{},questions:[],journal:[],notified:{}};
 let S;
 try{S=Object.assign(structuredClone(blank),JSON.parse(localStorage.getItem(KEY)||'{}'))}catch(e){S=structuredClone(blank)}
@@ -204,10 +222,11 @@ const I={
  cycle:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>',
  meds:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 2l4 4M17 7l3-3M19 9 8.7 19.3a2.4 2.4 0 0 1-3.4 0l-.6-.6a2.4 2.4 0 0 1 0-3.4L15 5M9 11l4 4M5 19l-3 3"/></svg>',
  diary:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 4h12a4 4 0 0 1 4 4v12H8a4 4 0 0 1-4-4z"/><path d="M8 9h8M8 13h6"/></svg>',
+ coach:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/><path d="M9 11h2l1-2 1 4 1-2h1"/></svg>',
  more:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg>'
 };
-const TABS=[['today','Σήμερα'],['cycle','Ο κύκλος μου'],['meds','Φάρμακα'],['diary','Ημερολόγιο'],['more','Περισσότερα']];
-const DESK=[['today','Σήμερα'],['cycle','Κύκλος'],['meds','Φάρμακα'],['diary','Ημερολόγιο'],['scans','Υπερηχογραφήματα'],['learn','Μάθε'],['mind','Ψυχή'],['questions','Ερωτήσεις'],['clinic','Κλινική']];
+const TABS=[['today','Σήμερα'],['cycle','Κύκλος'],['meds','Φάρμακα'],['coach','Psy Coach'],['diary','Ημερολόγιο'],['more','Άλλα']];
+const DESK=[['today','Σήμερα'],['cycle','Κύκλος'],['meds','Φάρμακα'],['coach','Psy Coach'],['diary','Ημερολόγιο'],['scans','Υπερηχογραφήματα'],['learn','Μάθε'],['questions','Ερωτήσεις'],['clinic','Κλινική']];
 
 /* ---------- Cycle logic ---------- */
 function phase(){
@@ -237,7 +256,7 @@ const $=s=>document.querySelector(s);
 function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('show');clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove('show'),2200)}
 function nav(){
   const r=route().split('/')[0];
-  const moreSet=['more','scans','learn','mind','questions','clinic','settings','inject'];
+  const moreSet=['more','scans','learn','questions','clinic','settings','inject'];
   $('#tabbar').innerHTML=TABS.map(([k,l])=>`<a href="#${k}" class="${(k===r||(k==='more'&&moreSet.includes(r)))?'on':''}">${I[k]}<span>${l}</span></a>`).join('');
   $('#deskNav').innerHTML=DESK.map(([k,l])=>`<a href="#${k}" class="${k===r?'on':''}">${l}</a>`).join('');
 }
@@ -268,7 +287,7 @@ V.today=()=>{
   <div class="grid g3" style="margin-top:16px">
    <div class="card"><h3>Πώς νιώθεις σήμερα;</h3>${log?`<p style="font-size:1.8rem;margin:4px 0">${log.mood?MOODS[log.mood-1]:'📝'}</p><p class="small muted">${(log.symptoms||[]).length} συμπτώματα καταγράφηκαν</p>`:'<p class="muted small">Μία καταγραφή την ημέρα βοηθά εσένα και τον γιατρό σου.</p>'}<a class="btn sm" href="#diary">${log?'Επεξεργασία':'Καταγραφή'}</a></div>
    <div class="card"><h3>Επόμενο ραντεβού</h3>${nextAppt?`<p><b>${fmtL(nextAppt.date)}${nextAppt.time?', '+nextAppt.time:''}</b><br>${esc(nextAppt.title)}</p>`:'<p class="muted small">Δεν υπάρχει προγραμματισμένο ραντεβού.</p>'}<a class="btn alt sm" href="#cycle">Ραντεβού</a></div>
-   <div class="card soft"><h3>Μια σκέψη για σήμερα</h3><p>${aff}</p><a class="btn ghost" href="#mind">Άσκηση αναπνοής →</a></div>
+   <div class="card coachMini"><span class="pill lilac">💞 Fertility Psy Coach</span><h3 style="margin-top:8px">${(PHASE_COACH[p.key]||PHASE_COACH.none).t}</h3><p class="small">${aff}</p><p class="small" style="margin:0">Για εσένα: <a href="#coach">${EX[(PHASE_COACH[p.key]||PHASE_COACH.none).me[0]].t}</a><br>Για το ζευγάρι: <a href="#coach">${EX[(PHASE_COACH[p.key]||PHASE_COACH.none).co[0]].t}</a></p><a class="btn sm" style="margin-top:10px;background:var(--lilac)" href="#coach">Άνοιξε το Psy Coach</a></div>
   </div>
   <div class="sectionTitle"><h2>Γρήγορη πρόσβαση</h2></div>
   <div class="tiles">
@@ -447,7 +466,7 @@ V.more=()=>`
    ${tile('scans','🔍','var(--teal-soft)','Υπερηχογραφήματα','Θυλάκια, ενδομήτριο, E2')}
    ${tile('inject','💉','var(--coral-soft)','Οδηγός ενέσεων','Βήμα βήμα')}
    ${tile('learn','📖','var(--lilac-soft)','Μάθε','Βήματα, λεξικό, μύθοι')}
-   ${tile('mind','🌿','var(--teal-soft)','Ψυχή','Αναπνοή, σκέψεις, στήριξη')}
+   ${tile('coach','💞','var(--lilac-soft)','Fertility Psy Coach','Ψυχολογία για εσένα και το ζευγάρι')}
    ${tile('questions','❓','var(--gold-soft)','Ερωτήσεις','Για το επόμενο ραντεβού')}
    ${tile('clinic','📞','var(--coral-soft)','Κλινική','Επαφές, πότε καλώ')}
    ${tile('settings','⚙️','var(--surface2)','Ρυθμίσεις','Αντίγραφο, διαγραφή')}
@@ -474,26 +493,121 @@ V.learn=()=>`
    </div>
   </div>`;
 
-V.mind=()=>`
-  <h1>Ψυχή</h1>
-  <p class="muted">Η εξωσωματική δεν είναι μόνο σωματική διαδικασία. Μερικά λεπτά φροντίδας την ημέρα κάνουν διαφορά.</p>
-  <div class="grid g2">
-   <div class="card" style="text-align:center">
-    <h2>Αναπνοή 4 · 6</h2><p class="small muted">Εισπνοή 4 δευτερόλεπτα, εκπνοή 6. Η μεγαλύτερη εκπνοή ηρεμεί το νευρικό σύστημα.</p>
-    <div class="breath" id="breath">Έτοιμη;</div>
-    <div class="row" style="justify-content:center"><button class="btn" data-a="breath">Ξεκίνα (3 λεπτά)</button><button class="btn alt" data-a="breathstop">Στοπ</button></div>
+/* ---------- Fertility Psy Coach ---------- */
+const VARVARA={name:'Βαρβάρα Παπασιδέρη',role:'Ψυχολόγος · Fertility coach',tiktok:'https://www.tiktok.com/@ask.varvara.psy',tiktokH:'@ask.varvara.psy',ig:'https://www.instagram.com/varvara_papasideri/',igH:'@varvara_papasideri'};
+const TT_IC='<svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M16.6 5.8A4.3 4.3 0 0 1 15.5 3h-3.1v12.4a2.6 2.6 0 1 1-1.8-2.5V9.7a5.7 5.7 0 1 0 4.9 5.6V9a7.3 7.3 0 0 0 4.3 1.4V7.3a4.3 4.3 0 0 1-3.2-1.5z"/></svg>';
+const IG_IC='<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor"/></svg>';
+const socialBtns=(cls='')=>`<a class="btn ${cls}" href="${VARVARA.tiktok}" target="_blank" rel="noopener">${TT_IC} TikTok ${VARVARA.tiktokH}</a><a class="btn ${cls}" href="${VARVARA.ig}" target="_blank" rel="noopener">${IG_IC} Instagram ${VARVARA.igH}</a>`;
+const varvaraCard=()=>`<div class="card vcard"><div class="row" style="align-items:flex-start;gap:14px"><span class="vav">ΒΠ</span><div style="flex:1;min-width:200px"><span class="pill lilac">Η Fertility Psy Coach σου</span><h2 style="margin-top:8px">${VARVARA.name}</h2><p class="muted small" style="margin-top:-4px">${VARVARA.role}</p><p>Η Βαρβάρα βοηθά γυναίκες και ζευγάρια να περάσουν τη διαδρομή της γονιμότητας με λιγότερο άγχος και περισσότερη σύνδεση. Ακολούθησέ την για καθημερινές ιδέες, ασκήσεις και στήριξη.</p><div class="row">${socialBtns('lil')}</div></div></div></div>`;
+
+const EX={
+ // ---- για εσένα ----
+ breath:{who:'me',t:'Αναπνοή 4 · 6',m:3,why:'Η εκπνοή μεγαλύτερη από την εισπνοή ενεργοποιεί το παρασυμπαθητικό σύστημα και μειώνει τη σωματική ένταση. Ιδανική πριν από ενέσεις, υπερηχογράφημα ή τηλεφώνημα από την κλινική.',steps:['Κάθισε άνετα, χέρι στην κοιλιά.','Εισπνοή από τη μύτη για 4.','Εκπνοή αργά από το στόμα για 6.','Συνέχισε για 3 λεπτά με τον κύκλο παρακάτω.'],breath:true},
+ ground:{who:'me',t:'Γείωση 5 · 4 · 3 · 2 · 1',m:2,why:'Όταν το μυαλό τρέχει στο «τι θα γίνει», οι αισθήσεις σε φέρνουν πίσω στο τώρα.',steps:['5 πράγματα που βλέπεις.','4 που ακούς.','3 που αγγίζεις.','2 που μυρίζεις.','1 που γεύεσαι.'],q:'Τι πρόσεξες που δεν είχες προσέξει πριν;'},
+ defuse:{who:'me',t:'«Έχω τη σκέψη ότι…»',m:3,why:'Από τη θεραπεία αποδοχής και δέσμευσης (ACT): δεν παλεύουμε με τη σκέψη, παίρνουμε λίγη απόσταση από αυτή.',steps:['Γράψε τη σκέψη που σε βαραίνει, π.χ. «Δεν θα πετύχει».','Ξαναγράψ\' την ως «Έχω τη σκέψη ότι δεν θα πετύχει».','Και μετά: «Προσέχω ότι έχω τη σκέψη ότι…».','Παρατήρησε αν άλλαξε λίγο το βάρος της (0 έως 10).'],q:'Η σκέψη μου και πώς άλλαξε:'},
+ selfcomp:{who:'me',t:'Διάλειμμα αυτοσυμπόνιας',m:3,why:'Οι γυναίκες σε εξωσωματική συχνά κατηγορούν τον εαυτό τους. Η αυτοσυμπόνια μειώνει την αυτοκριτική χωρίς να μειώνει την προσπάθεια.',steps:['Χέρι στην καρδιά. Πες: «Αυτή είναι μια δύσκολη στιγμή».','«Δεν είμαι η μόνη. Πολλές γυναίκες νιώθουν έτσι».','«Τι θα έλεγα σε μια φίλη μου στη θέση μου;» Πες το και στον εαυτό σου.'],q:'Τι θα έλεγα σε μια φίλη μου:'},
+ worry:{who:'me',t:'Ο «χρόνος ανησυχίας»',m:15,why:'Αντί να ανησυχείς όλη μέρα, δίνεις στην ανησυχία ένα ραντεβού. Τεχνική από τη γνωσιακή συμπεριφορική θεραπεία, πολύ χρήσιμη στις 2 εβδομάδες αναμονής.',steps:['Όρισε 15 λεπτά την ίδια ώρα κάθε μέρα (όχι πριν τον ύπνο).','Όταν έρχεται μια ανησυχία μέσα στη μέρα, σημείωσέ τη και πες «θα το σκεφτώ στις 18:00».','Στο ραντεβού, γράψε τις ανησυχίες: ποιες ελέγχω, ποιες όχι;','Όταν τελειώσει ο χρόνος, κλείσε το τετράδιο.'],q:'Οι ανησυχίες μου σήμερα (ελέγχω / δεν ελέγχω):'},
+ values:{who:'me',t:'Τι έχει σημασία για μένα, πέρα από την εξωσωματική',m:10,why:'Η θεραπεία εύκολα γίνεται όλη η ζωή. Όταν θυμάσαι τις αξίες σου, η ζωή δεν «παγώνει» μέχρι το αποτέλεσμα.',steps:['Διάλεξε 3 τομείς: σχέση, φίλοι, δουλειά, σώμα, δημιουργία, πνευματικότητα.','Για καθέναν γράψε τι άνθρωπος θέλεις να είσαι εκεί.','Διάλεξε μία μικρή πράξη για αυτή την εβδομάδα.'],q:'Οι 3 αξίες μου και μία μικρή πράξη:'},
+ record:{who:'me',t:'Καταγραφή σκέψεων',m:10,why:'Βασικό εργαλείο της γνωσιακής συμπεριφορικής θεραπείας: χωρίζουμε το γεγονός από την ερμηνεία μας.',record:true},
+ body:{who:'me',t:'Σάρωση σώματος',m:5,why:'Οι ενέσεις και οι εξετάσεις κάνουν το σώμα «πεδίο ελέγχου». Η σάρωση σε βοηθά να ξαναγίνεις φιλική μαζί του.',steps:['Ξάπλωσε ή κάθισε. Κλείσε τα μάτια.','Πέρνα την προσοχή σου αργά από τα πόδια ως το κεφάλι.','Όπου βρίσκεις ένταση, εκπνεύσε προς τα εκεί.','Τελείωσε με ένα «ευχαριστώ» στο σώμα σου.']},
+ social:{who:'me',t:'Ανακοινώσεις εγκυμοσύνης και social media',m:10,why:'Ζήλια, θλίψη ή θυμός όταν άλλες μένουν έγκυες είναι φυσιολογικά συναισθήματα, όχι ελάττωμα χαρακτήρα.',steps:['Δώσε στον εαυτό σου άδεια να κάνεις σίγαση (mute) σε λογαριασμούς για λίγο.','Δεν είσαι υποχρεωμένη να πας σε baby shower. Ένα μήνυμα με αγάπη αρκεί.','Γράψε μια έτοιμη φράση για τέτοιες στιγμές: «Χαίρομαι για σένα. Για μένα είναι δύσκολη περίοδος».'],q:'Τα όριά μου αυτόν τον μήνα:'},
+ // ---- για το ζευγάρι ----
+ rule20:{who:'couple',t:'Ο κανόνας των 20 λεπτών',m:20,why:'Πολλά ζευγάρια είτε μιλούν μόνο για την εξωσωματική, είτε καθόλου. Ένα όριο χρόνου προστατεύει και τους δύο.',steps:['Βάλτε χρονόμετρο 20 λεπτά, μία φορά την ημέρα.','Μιλήστε για ό,τι αφορά τη θεραπεία: φόβους, αποφάσεις, πρακτικά.','Όταν χτυπήσει, σταματάτε. Το υπόλοιπο βράδυ είναι για εσάς, όχι για την εξωσωματική.'],q:'Τι μάθαμε ο ένας για τον άλλον:',timer:20},
+ listen:{who:'couple',t:'Μιλάω, ακούς',m:15,why:'Τεχνική από την ψυχοθεραπεία ζεύγους: ο ένας μιλάει, ο άλλος μόνο ακούει και επαναλαμβάνει. Μειώνει τις παρεξηγήσεις και τους καβγάδες.',steps:['Ο ομιλητής κρατά ένα αντικείμενο και μιλά σε πρώτο πρόσωπο: «Εγώ νιώθω…».','Ο ακροατής δεν απαντά, δεν δίνει λύση. Λέει μόνο: «Άκουσα ότι… Το κατάλαβα σωστά;».','Αλλάζετε ρόλους μετά από 5 λεπτά.','Κλείστε με: «Τι χρειάζεσαι από μένα αυτή την εβδομάδα;».'],q:'Τι χρειάζεται ο καθένας μας αυτή την εβδομάδα:'},
+ styles:{who:'couple',t:'Δύο διαφορετικοί τρόποι να αντέχουμε',m:15,why:'Συχνά ο ένας θέλει να μιλάει και ο άλλος να «λύνει» ή να αποσύρεται. Δεν σημαίνει ότι νοιάζεται λιγότερο. Απλώς αντέχει αλλιώς.',steps:['Ο καθένας απαντά: «Όταν φοβάμαι, εγώ συνήθως…».','«Αυτό που με βοηθά περισσότερο από σένα είναι…».','«Αυτό που με πληγώνει χωρίς να το θέλεις είναι…».','Συμφωνήστε ένα μικρό πράγμα που θα κάνει ο καθένας διαφορετικά.'],q:'Η συμφωνία μας:'},
+ roles:{who:'couple',t:'Χάρτης ρόλων',m:15,why:'Όταν όλα πέφτουν σε έναν άνθρωπο (ενέσεις, ραντεβού, τηλέφωνα, έρευνα), αυτός εξαντλείται και ο άλλος νιώθει απ\' έξω.',steps:['Γράψτε όλες τις εργασίες: ενέσεις, ραντεβού, φάρμακα, επικοινωνία με κλινική, οικονομικά, ενημέρωση οικογένειας.','Δίπλα σε καθεμία γράψτε ποιος την αναλαμβάνει.','Ο σύντροφος μπορεί να κάνει τις ενέσεις ή να είναι παρών σε αυτές.','Ξαναδείτε τον χάρτη στη μέση του κύκλου.'],q:'Ποιος κάνει τι:'},
+ outsiders:{who:'couple',t:'Τι λέμε στους άλλους',m:10,why:'Οι αδιάκριτες ερωτήσεις («πότε το παιδί;») πληγώνουν. Όταν έχετε συμφωνήσει από πριν, δεν σας αιφνιδιάζουν.',steps:['Ποιοι ξέρουν για τη θεραπεία; Ποιοι θέλουμε να ξέρουν;','Ποιος θα ενημερώσει ποιον, και πότε (ή καθόλου);','Γράψτε μια κοινή απάντηση, π.χ. «Όταν έχουμε νέα, θα σας πούμε εμείς».'],q:'Η έτοιμη απάντησή μας:'},
+ date:{who:'couple',t:'Ραντεβού χωρίς εξωσωματική',m:60,why:'Είστε ζευγάρι πριν γίνετε ασθενείς. Ο χρόνος χωρίς θεραπεία προστατεύει τη σχέση.',steps:['Μία φορά την εβδομάδα, κάτι που σας αρέσει και στους δύο.','Απαγορεύεται η λέξη «εξωσωματική» (και τα συνώνυμα!).','Κλείστε τα κινητά. Θυμηθείτε πώς γνωριστήκατε.'],q:'Τι κάναμε και πώς νιώσαμε:'},
+ grateful:{who:'couple',t:'Τρία πράγματα που εκτιμώ σε σένα',m:5,why:'Η ευγνωμοσύνη προς τον σύντροφο ενισχύει την ικανοποίηση από τη σχέση, ιδιαίτερα σε περιόδους πίεσης.',steps:['Ο καθένας γράφει 3 συγκεκριμένα πράγματα που εκτίμησε στον άλλον αυτή την εβδομάδα.','Τα διαβάζετε φωναχτά ο ένας στον άλλον.','Ο ακροατής απαντά μόνο «ευχαριστώ».'],q:'Αυτά που ειπώθηκαν:'},
+ intimacy:{who:'couple',t:'Οικειότητα χωρίς στόχο',m:20,why:'Η θεραπεία κάνει συχνά το σεξ «πρόγραμμα» ή το σταματά. Η τρυφερότητα χωρίς στόχο ξαναφέρνει την εγγύτητα, χωρίς πίεση.',steps:['Συμφωνήστε ότι απόψε δεν υπάρχει στόχος, μόνο επαφή.','Αγκαλιά, μασάζ, χάδι, με τη σειρά, 10 λεπτά ο καθένας.','Μιλήστε για το τι ήταν ευχάριστο.','Ακολουθείτε πάντα τις οδηγίες της κλινικής για τις σεξουαλικές επαφές σε κάθε φάση.']},
+ limits:{who:'couple',t:'Η συζήτηση για τα όρια',m:30,why:'Πόσους κύκλους; Μέχρι ποιο ποσό; Τι κάνουμε αν δεν πετύχει; Όταν τα συζητάτε ήρεμα από πριν, οι αποφάσεις μετά τον κύκλο είναι λιγότερο επώδυνες.',steps:['Ο καθένας γράφει μόνος του: πόσες προσπάθειες, πόσα χρήματα, πόσος χρόνος.','Συγκρίνετε χωρίς κριτική. Πού συμφωνείτε; Πού διαφέρετε;','Συζητήστε και τα «σχέδια Β» (π.χ. δωρεά ωαρίων, υιοθεσία, ζωή χωρίς παιδιά) χωρίς να χρειάζεται να αποφασίσετε τώρα.','Ορίστε πότε θα το ξανασυζητήσετε.'],q:'Τα όριά μας για τώρα:'},
+ result:{who:'couple',t:'Σχέδιο για την ημέρα του αποτελέσματος',m:15,why:'Η ημέρα της β-hCG είναι από τις πιο φορτισμένες. Ένα σχέδιο από πριν δίνει αίσθηση ελέγχου.',steps:['Πώς θα μάθουμε το αποτέλεσμα; Μαζί; Ποιος θα πάρει το τηλέφωνο;','Πού θα είμαστε; Θα πάμε στη δουλειά εκείνη τη μέρα;','Αν είναι θετικό: σε ποιον το λέμε και πότε;','Αν είναι αρνητικό: τι χρειάζεται ο καθένας (μοναξιά, αγκαλιά, βόλτα); Ποιος θα ενημερώσει τους άλλους;'],q:'Το σχέδιό μας:'},
+ partner:{who:'couple',t:'Για τον σύντροφο: πώς στηρίζω',m:5,why:'Ο σύντροφος συχνά νιώθει αβοήθητος. Δεν χρειάζεται να «διορθώσει» τίποτα. Χρειάζεται να είναι παρών.',steps:['Βοηθά: «Είμαι εδώ», να έρχεσαι στα ραντεβού, να κάνεις ή να κρατάς τις ενέσεις, να αναλαμβάνεις τα πρακτικά.','Δεν βοηθά: «Χαλάρωσε και θα γίνει», «Τουλάχιστον…», σύγκριση με άλλα ζευγάρια.','Και ο σύντροφος πενθεί και φοβάται. Έχει κι αυτός δικαίωμα να μιλήσει και να ζητήσει στήριξη.']}
+};
+const PHASE_COACH={
+ none:{t:'Πριν ξεκινήσετε',x:'Τώρα είναι η καλύτερη στιγμή να συμφωνήσετε πώς θα περάσετε τη διαδρομή μαζί.',me:['values','breath'],co:['roles','outsiders','limits']},
+ pre:{t:'Πριν ξεκινήσετε',x:'Τώρα είναι η καλύτερη στιγμή να συμφωνήσετε πώς θα περάσετε τη διαδρομή μαζί.',me:['values','breath'],co:['roles','outsiders','limits']},
+ stim:{t:'Ενέσεις και υπερηχογραφήματα',x:'Η καθημερινή ρουτίνα κουράζει. Κρατήστε χώρο για εσάς και μοιραστείτε τα πρακτικά.',me:['breath','body','selfcomp'],co:['rule20','roles','date']},
+ post:{t:'Trigger και ωοληψία',x:'Λίγες μέρες με πολλή ένταση. Μείνετε κοντά και απλά.',me:['ground','breath'],co:['grateful','partner']},
+ lab:{t:'Αναμονή για τα νέα του εργαστηρίου',x:'Κάθε τηλεφώνημα φέρνει αγωνία. Μην κρατάτε τα συναισθήματα μόνοι σας.',me:['worry','defuse'],co:['listen','styles']},
+ tww:{t:'Οι 2 εβδομάδες αναμονής',x:'Η πιο δύσκολη ψυχολογικά φάση για τα περισσότερα ζευγάρια. Δώστε στην ανησυχία όρια και στη σχέση χρόνο.',me:['worry','selfcomp','defuse'],co:['result','date','intimacy']},
+ beta:{t:'Η ημέρα του αποτελέσματος',x:'Ό,τι κι αν δείξει, είστε ομάδα. Δεν χρειάζεται να νιώθετε το ίδιο την ίδια στιγμή.',me:['selfcomp','breath'],co:['listen','result']}
+};
+const GUIDE=[
+ ['Τι είναι φυσιολογικό να νιώθω;','Άγχος, ελπίδα, θυμός, ζήλια, ενοχή, κούραση, και όλα αυτά μέσα στην ίδια μέρα. Οι ορμόνες μπορεί να εντείνουν τα συναισθήματα. Τα συναισθήματα δεν είναι λάθη ούτε επηρεάζουν το αποτέλεσμα.'],
+ ['Αν ο κύκλος ακυρωθεί ή τα ωάρια είναι λιγότερα από όσα περιμέναμε','Η απογοήτευση είναι απώλεια και θέλει χώρο. Πριν πάρετε αποφάσεις, ζητήστε ραντεβού με τον γιατρό για να καταλάβετε τι έγινε και τι αλλάζει την επόμενη φορά.'],
+ ['Αν το αποτέλεσμα είναι αρνητικό','Είναι πένθος, ακόμη κι αν δεν το λένε έτσι οι γύρω. Δώστε στον εαυτό σας λίγες μέρες. Μην αποφασίσετε για τον επόμενο κύκλο την ίδια μέρα. Ο καθένας μπορεί να πενθεί διαφορετικά, και αυτό είναι εντάξει.'],
+ ['Αν είναι θετικό, αλλά φοβάμαι να χαρώ','Πολύ συχνό μετά από μακριά διαδρομή. Η χαρά και ο φόβος μπορούν να συνυπάρχουν. Ζήστε μία μέρα τη φορά, ως το επόμενο ραντεβού.'],
+ ['Όταν ο ένας θέλει να συνεχίσει και ο άλλος όχι','Δεν υπάρχει «σωστός» και «λάθος». Χρησιμοποιήστε την άσκηση «Μιλάω, ακούς» και, αν κολλάτε, μια συνεδρία ζεύγους με ψυχολόγο βοηθά πολύ.'],
+ ['Όταν το πρόβλημα αφορά τον έναν από τους δύο','Ενοχή («φταίω εγώ») και θυμός είναι συχνά. Η υπογονιμότητα είναι πρόβλημα του ζευγαριού, όχι του ενός ατόμου. Μοιραστείτε το βάρος.']
+];
+const COACH_TABS=[['','Αρχική'],['me','Για εσένα'],['couple','Για το ζευγάρι'],['checkin','Check-in ζευγαριού'],['guide','Οδηγός συναισθημάτων']];
+const exDone=id=>(S.coach.done[id]||[]).includes(today());
+function exCard(id,open){
+  const e=EX[id];if(!e)return '';const n=(S.coach.done[id]||[]).length;
+  return `<details class="ex" ${open?'open':''} id="ex-${id}"><summary><span><span class="pill ${e.who==='me'?'coral':'lilac'}">${e.who==='me'?'Για εσένα':'Για το ζευγάρι'}</span> <span class="small muted">· ${e.m}′</span><br>${e.t}${exDone(id)?' ✓':''}</span></summary><div class="inner">
+   <p class="small muted">${e.why}</p>
+   ${e.steps?`<ol class="small">${e.steps.map(s=>`<li style="margin:4px 0">${s}</li>`).join('')}</ol>`:''}
+   ${e.breath?`<div style="text-align:center"><div class="breath" id="breath">Έτοιμη;</div><div class="row" style="justify-content:center"><button class="btn" data-a="breath">Ξεκίνα (3 λεπτά)</button><button class="btn alt" data-a="breathstop">Στοπ</button></div></div>`:''}
+   ${e.record?recordForm():''}
+   ${e.timer?`<div class="row" style="margin:8px 0"><button class="btn alt sm" data-a="timer" data-m="${e.timer}">⏱ Χρονόμετρο ${e.timer}′</button><span class="small" id="timer-${id}"></span></div>`:''}
+   ${e.q?`<form data-form="reflect" data-id="${id}"><label>${e.q}</label><textarea name="text">${esc((S.coach.notes[id]||''))}</textarea><button class="btn alt sm" style="margin-top:8px">Αποθήκευση σημείωσης</button></form>`:''}
+   <div class="row between" style="margin-top:12px"><button class="btn sm ${exDone(id)?'alt':''}" data-a="exdone" data-id="${id}">${exDone(id)?'✓ Έγινε σήμερα':'Το κάναμε σήμερα'}</button><span class="small muted">${n?'Ολοκληρώθηκε '+n+(n===1?' φορά':' φορές'):''}</span></div>
+  </div></details>`;
+}
+function recordForm(){return `<form data-form="record"><div class="fields two">
+  <div><label>Τι συνέβη;</label><input name="sit" placeholder="π.χ. Δεν με πήραν τηλέφωνο από την κλινική" required></div>
+  <div><label>Τι σκέφτηκα;</label><input name="thought" placeholder="π.χ. Κάτι πήγε στραβά" required></div>
+  <div><label>Τι ένιωσα; (0 έως 100)</label><input name="feel" placeholder="π.χ. Άγχος 80"></div>
+  <div><label>Πιο ισορροπημένη σκέψη</label><input name="alt" placeholder="π.χ. Συχνά καλούν αργά το απόγευμα"></div>
+  <div><label>Πώς νιώθω τώρα; (0 έως 100)</label><input name="after" placeholder="π.χ. Άγχος 50"></div></div>
+  <button class="btn sm" style="margin-top:10px">Αποθήκευση</button></form>
+  ${S.coach.records.length?`<div style="overflow:auto;margin-top:10px"><table><tr><th>Ημέρα</th><th>Συνέβη</th><th>Σκέψη</th><th>Πριν</th><th>Νέα σκέψη</th><th>Μετά</th></tr>${S.coach.records.slice().reverse().slice(0,8).map(r=>`<tr><td>${fmt(r.date)}</td><td>${esc(r.sit)}</td><td>${esc(r.thought)}</td><td>${esc(r.feel)}</td><td>${esc(r.alt)}</td><td>${esc(r.after)}</td></tr>`).join('')}</table></div>`:''}`}
+function stressAdvice(v){
+  if(v==null)return '';
+  if(v<=3)return '<p>Καλή μέρα για να φροντίσεις τη σχέση σας: δοκίμαστε τα «Τρία πράγματα που εκτιμώ σε σένα».</p>';
+  if(v<=6)return '<p>Μέτρια ένταση. Κάνε την <a href="#coach/me">Αναπνοή 4 · 6</a> και τον «χρόνο ανησυχίας». Πες στον σύντροφό σου πώς είσαι.</p>';
+  if(v<=8)return '<p>Υψηλή ένταση. Μην τη σηκώνεις μόνη: μίλα με τον σύντροφο ή μια φίλη σήμερα, κάνε το «Διάλειμμα αυτοσυμπόνιας» και σκέψου μια συνεδρία με ψυχολόγο.</p>';
+  return '<p><b>Πολύ υψηλή ένταση.</b> Αξίζεις στήριξη τώρα. Μίλησε σήμερα με ψυχολόγο και με κάποιον κοντινό σου άνθρωπο. Σε έκτακτη ανάγκη κάλεσε <a href="tel:166">166</a> ή <a href="tel:112">112</a>.</p>';
+}
+V.coach=()=>{
+  const sub=route().split('/')[1]||'';const ph=phase();const pc=PHASE_COACH[ph.key]||PHASE_COACH.none;const st=S.coach.stress[today()];
+  const tabs=`<div class="subtabs">${COACH_TABS.map(([k,l])=>`<a href="#coach${k?'/'+k:''}" class="${k===sub?'on':''}">${l}</a>`).join('')}</div>`;
+  let body='';
+  if(sub===''){body=`
+   <div class="grid g2">
+    <div class="card coachHero"><span class="pill">Fertility Psy Coach</span><h1 style="margin-top:12px">Η ψυχολογία είναι μέρος της θεραπείας</h1><p>Το πρωτόκολλο φροντίζει το σώμα. Εδώ φροντίζουμε τον νου και τη σχέση: ασκήσεις για εσένα, ασκήσεις για το ζευγάρι, και ένας οδηγός για κάθε φάση του κύκλου.</p></div>
+    <div class="card"><h2>Πόση ένταση νιώθεις σήμερα;</h2><p class="small muted">0 = καθόλου, 10 = όσο δεν πάει άλλο</p>
+     <div class="scale">${[...Array(11)].map((_,i)=>`<button class="${st===i?'on':''}" style="--h:${120-i*12}" data-a="stress" data-v="${i}">${i}</button>`).join('')}</div>
+     ${stressAdvice(st)}</div>
    </div>
-   <div class="grid">
-    <div class="card soft"><h3>Γείωση 5 · 4 · 3 · 2 · 1</h3><p class="small">Όταν το μυαλό τρέχει στο αποτέλεσμα: πες 5 πράγματα που βλέπεις, 4 που ακούς, 3 που αγγίζεις, 2 που μυρίζεις, 1 που γεύεσαι. Επιστρέφεις στο τώρα.</p></div>
-    <div class="card soft"><h3>Οι σκέψεις δεν είναι γεγονότα</h3><p class="small">Αν σκέφτεσαι «σίγουρα δεν θα πετύχει», δοκίμασε να το πεις «προσέχω ότι έχω τη σκέψη ότι δεν θα πετύχει». Μια μικρή απόσταση από τη σκέψη μειώνει τη δύναμή της.</p></div>
-    <div class="card soft"><h3>Μίλα σε κάποιον</h3><p class="small">Αν η στενοχώρια ή το άγχος σε δυσκολεύουν να λειτουργήσεις, ζήτησε στήριξη από ψυχολόγο με εμπειρία στην υπογονιμότητα. Είναι μέρος της θεραπείας, όχι αδυναμία.</p></div>
-   </div>
-  </div>
-  <div class="card" style="margin-top:16px">
-   <h2>Το ημερολόγιο σκέψεών μου</h2>
+   <div class="card" style="margin-top:16px"><div class="row between"><h2>Για τη φάση σας: ${pc.t}</h2>${S.cycle.protocol?'':'<a class="btn ghost" href="#cycle">Ρύθμισε τον κύκλο →</a>'}</div><p class="muted">${pc.x}</p>
+    <div class="grid g2"><div><h3>Για εσένα</h3>${pc.me.map(id=>exCard(id)).join('')}</div><div><h3>Για το ζευγάρι</h3>${pc.co.map(id=>exCard(id)).join('')}</div></div></div>
+   <div style="margin-top:16px">${varvaraCard()}</div>
+   <div class="grid g2" style="margin-top:16px">
+    <div class="card soft"><h3>Πότε να ζητήσω επαγγελματική βοήθεια</h3><ul class="small"><li>Θλίψη ή άγχος σχεδόν κάθε μέρα για πάνω από 2 εβδομάδες.</li><li>Δυσκολία στον ύπνο, στη δουλειά ή στις σχέσεις.</li><li>Συνεχείς καβγάδες ή απομάκρυνση στο ζευγάρι.</li><li>Σκέψεις ότι δεν αξίζει να ζεις.</li></ul></div>
+    <div class="card soft"><h3>Στήριξη από ειδικό</h3><p class="small">Μια ψυχολόγος με εμπειρία στη γονιμότητα μπορεί να σας στηρίξει ατομικά ή ως ζευγάρι, σε κάθε φάση. Ξεκινήστε ακολουθώντας τη Βαρβάρα:</p><div class="row">${socialBtns('lil sm')}</div><p class="small muted" style="margin-top:10px">Σε έκτακτη ανάγκη: <a href="tel:166">166</a> · <a href="tel:112">112</a></p></div>
+   </div>`}
+  if(sub==='me'){body=`<p class="muted">Ασκήσεις από τη γνωσιακή συμπεριφορική θεραπεία, τη θεραπεία αποδοχής και δέσμευσης και την ενσυνειδητότητα. Λίγα λεπτά την ημέρα.</p>
+   <div class="grid g2"><div>${Object.keys(EX).filter(k=>EX[k].who==='me').map(id=>exCard(id)).join('')}</div>
+   <div><div class="card"><h2>Το ημερολόγιο σκέψεών μου</h2>
    <form data-form="journal"><textarea name="text" placeholder="Τι νιώθω σήμερα; Τι με βοήθησε; Για τι είμαι ευγνώμων;" required></textarea><button class="btn" style="margin-top:10px">Αποθήκευση</button></form>
-   <div class="list" style="margin-top:12px">${S.journal.slice().reverse().map(j=>`<div class="item"><span><span class="small muted">${fmtL(j.date)}</span><br>${esc(j.text).replace(/\n/g,'<br>')}</span><button class="btn ghost" data-a="deljournal" data-id="${j.id}">✕</button></div>`).join('')}</div>
-  </div>`;
+   <div class="list" style="margin-top:12px">${S.journal.slice().reverse().map(j=>`<div class="item"><span><span class="small muted">${fmtL(j.date)}</span><br>${esc(j.text).replace(/\n/g,'<br>')}</span><button class="btn ghost" data-a="deljournal" data-id="${j.id}">✕</button></div>`).join('')}</div></div>
+   <div style="margin-top:16px">${varvaraCard()}</div></div></div>`}
+  if(sub==='couple'){body=`<div class="card soft" style="margin-bottom:12px"><p><b>Η εξωσωματική γίνεται από δύο ανθρώπους.</b> Η έρευνα δείχνει ότι τα ζευγάρια που μιλούν ανοιχτά και μοιράζονται τα βάρη αντέχουν καλύτερα το άγχος της θεραπείας. Διαλέξτε μία άσκηση την εβδομάδα. Κάντε τις μαζί, με το κινητό ανάμεσά σας.</p></div>
+   <div class="grid g2"><div>${Object.keys(EX).filter(k=>EX[k].who==='couple').slice(0,6).map(id=>exCard(id)).join('')}</div><div>${Object.keys(EX).filter(k=>EX[k].who==='couple').slice(6).map(id=>exCard(id)).join('')}<div style="margin-top:12px"><a class="btn coral" href="#coach/checkin">💞 Εβδομαδιαίο check-in ζευγαριού</a></div></div></div>`}
+  if(sub==='checkin'){const C=S.coach.checkins.slice().sort((a,b)=>a.date.localeCompare(b.date));body=`
+   <div class="grid g2"><div class="card"><h2>Εβδομαδιαίο check-in</h2><p class="small muted">Μία φορά την εβδομάδα, 10 λεπτά. Ο καθένας απαντά για τον εαυτό του, χωρίς σχόλια από τον άλλον.</p>
+    <form data-form="checkin"><div class="fields two">
+     <div><h3>Εγώ</h3><label>Άγχος (0 έως 10)</label><input type="range" min="0" max="10" name="s1" value="5" oninput="this.nextElementSibling.textContent=this.value"><b>5</b><label>Πόσο κοντά σε νιώθω (0 έως 10)</label><input type="range" min="0" max="10" name="c1" value="5" oninput="this.nextElementSibling.textContent=this.value"><b>5</b><label>Τι χρειάζομαι από σένα</label><input name="n1"></div>
+     <div><h3>Σύντροφος</h3><label>Άγχος (0 έως 10)</label><input type="range" min="0" max="10" name="s2" value="5" oninput="this.nextElementSibling.textContent=this.value"><b>5</b><label>Πόσο κοντά σε νιώθω (0 έως 10)</label><input type="range" min="0" max="10" name="c2" value="5" oninput="this.nextElementSibling.textContent=this.value"><b>5</b><label>Τι χρειάζομαι από σένα</label><input name="n2"></div>
+    </div><label>Κάτι καλό που έγινε αυτή την εβδομάδα</label><input name="good"><button class="btn" style="margin-top:12px">Αποθήκευση</button></form></div>
+    <div class="card"><h2>Η πορεία σας</h2>${C.length>=2?chart(C.map(c=>({date:c.date,v:(+c.c1+ +c.c2)/2})),'v','Πόσο κοντά νιώθετε (μέσος όρος)','#8a78c2','')+chart(C.map(c=>({date:c.date,v:(+c.s1+ +c.s2)/2})),'v','Άγχος (μέσος όρος)','#e9775a',''):'<p class="muted">Μετά από δύο check-in θα δείτε γράφημα.</p>'}
+    <div class="list" style="margin-top:10px">${C.slice().reverse().map(c=>`<div class="item"><span class="small"><b>${fmtL(c.date)}</b><br>Εγώ: άγχος ${c.s1}, κοντά ${c.c1}${c.n1?' · «'+esc(c.n1)+'»':''}<br>Σύντροφος: άγχος ${c.s2}, κοντά ${c.c2}${c.n2?' · «'+esc(c.n2)+'»':''}${c.good?'<br>🌱 '+esc(c.good):''}</span><button class="btn ghost" data-a="delcheck" data-id="${c.id}">✕</button></div>`).join('')}</div></div></div>`}
+  if(sub==='guide'){body=`<div class="grid g2"><div>${GUIDE.map(([q,a])=>`<details><summary>${q}</summary><div class="inner small">${a}</div></details>`).join('')}</div><div>${varvaraCard()}</div></div>`}
+  return `<h1 style="margin-bottom:6px">Fertility Psy Coach</h1>${tabs}${body}`;
+};
+V.mind=()=>{location.replace('#coach/me');return ''};
 
 const SUGGESTQ=['Ποιο πρωτόκολλο θα κάνω και γιατί;','Τι κάνω αν ξεχάσω μια ένεση;','Πότε ακριβώς να κάνω το trigger και τι ώρα την ωοληψία;','Πόσα έμβρυα θα μεταφερθούν και τι γίνεται με τα υπόλοιπα;','Χρειάζεται γενετικός έλεγχος των εμβρύων στη δική μου περίπτωση;','Τι δραστηριότητες να αποφύγω μετά την ωοληψία και τη μεταφορά;','Πότε και πού κάνω τη β-hCG;','Ποιον καλώ εκτός ωραρίου;'];
 V.questions=()=>`
@@ -586,6 +700,10 @@ document.addEventListener('click',e=>{
   if(a==='addq'){S.questions.push({id:uid(),text:el.dataset.t,done:false});save();render();toast('Προστέθηκε')}
   if(a==='ics')ics();
   if(a==='notif'){if(!('Notification' in window)){toast('Ο browser δεν υποστηρίζει ειδοποιήσεις');return}Notification.requestPermission().then(p=>toast(p==='granted'?'Οι ειδοποιήσεις ενεργοποιήθηκαν':'Οι ειδοποιήσεις δεν επιτράπηκαν'))}
+  if(a==='stress'){S.coach.stress[today()]=+el.dataset.v;save();render()}
+  if(a==='exdone'){const id=el.dataset.id,d=S.coach.done[id]=S.coach.done[id]||[],i=d.indexOf(today());i<0?d.push(today()):d.splice(i,1);save();const op=el.closest('details')?.id;render();if(op){const x=document.getElementById(op);if(x)x.open=true}}
+  if(a==='delcheck'){S.coach.checkins=S.coach.checkins.filter(c=>c.id!==el.dataset.id);save();render()}
+  if(a==='timer'){const span=el.parentElement.querySelector('span');let s=+el.dataset.m*60;clearInterval(window._ct);const up=()=>{span.textContent=Math.floor(s/60)+':'+pad(s%60);if(s--<=0){clearInterval(window._ct);span.textContent='Τέλος χρόνου! 💞';notify('Τέλος χρόνου','Η άσκηση ολοκληρώθηκε')}};up();window._ct=setInterval(up,1000)}
   if(a==='breath'){stopBreath();const b=$('#breath');let n=0,inhale=true;const step=()=>{if(!$('#breath')||n>=18){stopBreath();return}b.classList.toggle('in',inhale);b.style.transitionDuration=(inhale?4:6)+'s';b.textContent=inhale?'Εισπνοή':'Εκπνοή';clearTimeout(breathTimer);breathTimer=setTimeout(()=>{inhale=!inhale;if(inhale)n++;step()},(inhale?4:6)*1000)};step()}
   if(a==='breathstop'){clearTimeout(breathTimer);stopBreath()}
   if(a==='export'){download(new Blob([JSON.stringify(S,null,2)],{type:'application/json'}),'mazi-ivf-backup-'+today()+'.json');toast('Το αντίγραφο αποθηκεύτηκε')}
@@ -604,6 +722,9 @@ document.addEventListener('submit',e=>{
   if(k==='scan'){S.scans.push({id:uid(),...v});toast('Αποθηκεύτηκε')}
   if(k==='log'){const d=f.dataset.d;S.logs[d]=Object.assign(S.logs[d]||{symptoms:[],flags:[],mood:0},{weight:v.weight,notes:v.notes});toast('Αποθηκεύτηκε')}
   if(k==='journal'){S.journal.push({id:uid(),date:today(),text:v.text});toast('Αποθηκεύτηκε')}
+  if(k==='reflect'){S.coach.notes[f.dataset.id]=v.text;save();toast('Αποθηκεύτηκε');const op=f.closest('details')?.id;render();if(op){const x=document.getElementById(op);if(x)x.open=true}return}
+  if(k==='record'){S.coach.records.push({id:uid(),date:today(),...v});save();toast('Αποθηκεύτηκε');render();const x=document.getElementById('ex-record');if(x)x.open=true;return}
+  if(k==='checkin'){S.coach.checkins.push({id:uid(),date:today(),...v});toast('Το check-in αποθηκεύτηκε')}
   if(k==='q'){S.questions.push({id:uid(),text:v.text,done:false})}
   if(k==='clinic'){Object.assign(S.clinic,v);toast('Αποθηκεύτηκε')}
   if(k==='profile'){S.profile.name=v.name;toast('Αποθηκεύτηκε')}
@@ -615,12 +736,12 @@ document.addEventListener('submit',e=>{
 function onboard(){
   if(S.profile.onboarded)return;
   const m=document.createElement('div');m.className='modal';
-  m.innerHTML=`<div class="card"><img src="icon.svg" alt="" width="56"><h2 style="margin-top:10px">Καλώς ήρθες</h2><p>Το «Μαζί στην Εξωσωματική» σε βοηθά να οργανώσεις τον κύκλο σου: φάρμακα, ραντεβού, συμπτώματα, και να καταλαβαίνεις κάθε βήμα.</p><ul class="small"><li>Τα δεδομένα σου μένουν <b>μόνο σε αυτή τη συσκευή</b>.</li><li>Η εφαρμογή <b>δεν αντικαθιστά</b> τις οδηγίες του γιατρού σου.</li><li>Σε έντονα συμπτώματα, καλείς την κλινική.</li></ul><form data-form="onboard"><label>Πώς να σε λέω; (προαιρετικό)</label><input name="name"><button class="btn" style="margin-top:14px;width:100%;justify-content:center">Ξεκινάμε</button></form></div>`;
+  m.innerHTML=`<div class="card"><img src="icon.svg" alt="" width="56"><h2 style="margin-top:10px">Καλώς ήρθες</h2><p>Το «Μαζί στην Εξωσωματική» σε βοηθά να οργανώσεις τον κύκλο σου: φάρμακα, ραντεβού, συμπτώματα, και να καταλαβαίνεις κάθε βήμα.</p><ul class="small"><li>Τα δεδομένα σου μένουν <b>μόνο σε αυτή τη συσκευή</b>.</li><li>Η εφαρμογή <b>δεν αντικαθιστά</b> τις οδηγίες του γιατρού σου.</li><li>Σε έντονα συμπτώματα, καλείς την κλινική.</li><li>Στο <b>Fertility Psy Coach</b> θα βρεις ασκήσεις για εσένα και για το ζευγάρι.</li></ul><form data-form="onboard"><label>Πώς να σε λέω; (προαιρετικό)</label><input name="name"><button class="btn" style="margin-top:14px;width:100%;justify-content:center">Ξεκινάμε</button></form></div>`;
   document.body.appendChild(m);
 }
 
 /* ---------- Router ---------- */
-function render(){const r=route().split('/')[0];const fn=V[r]||V.today;if(r!=='mind')clearTimeout(breathTimer);$('#app').innerHTML=fn();nav()}
+function render(){const r=route().split('/')[0];const fn=V[r]||V.today;if(r!=='coach')clearTimeout(breathTimer);$('#app').innerHTML=fn();nav()}
 window.addEventListener('hashchange',()=>{render();scrollTo(0,0)});
 render();onboard();
 setInterval(tick,30000);tick();
