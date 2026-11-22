@@ -141,6 +141,7 @@ details.ex summary{font-weight:600}
 .avatar .dot{position:absolute;right:-2px;bottom:-2px;width:12px;height:12px;border-radius:50%;border:2px solid #fff;background:#bbb}
 .avatar .dot.ok{background:#2e9d6a}.avatar .dot.sync{background:var(--gold)}.avatar .dot.err{background:var(--red)}
 .amenu{position:absolute;right:0;top:46px;background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:0 12px 32px rgba(0,0,0,.14);padding:14px;min-width:260px;display:flex;flex-direction:column;gap:6px;z-index:40}
+.amenu[hidden]{display:none!important}
 .amenu hr{border:0;border-top:1px solid var(--line);width:100%;margin:6px 0}
 .amenu a,.amenu button{all:unset;cursor:pointer;padding:8px 6px;border-radius:8px;color:var(--ink)}
 .amenu a:hover,.amenu button:hover{background:var(--surface2)}
@@ -1725,7 +1726,7 @@ document.addEventListener('click',e=>{
   if(a==='wipe'&&confirm('Θα διαγραφούν οριστικά όλα τα δεδομένα από αυτή τη συσκευή. Συνέχεια;')){localStorage.removeItem(KEY);S=structuredClone(blank);render();onboard()}
 });
 document.addEventListener('input',e=>{if(e.target.closest('form[data-form=report]'))refreshReport();if(e.target.dataset.a==='pscrub'){selDay=addDays(e.target.dataset.s,+e.target.value-1);const v=e.target.value;render();const r=document.querySelector('[data-a=pscrub]');if(r){r.value=v;r.focus()}}});
-document.addEventListener('click',e=>{const m=$('#amenu');if(m&&!m.hidden&&!e.target.closest('.acct'))m.hidden=true},true);
+const closeMenu=e=>{const m=$('#amenu');if(m&&!m.hidden&&(!e||!e.target.closest('.acct')))m.hidden=true};document.addEventListener('click',closeMenu,true);document.addEventListener('touchstart',closeMenu,{capture:true,passive:true});window.addEventListener('hashchange',()=>closeMenu());window.addEventListener('scroll',()=>closeMenu(),{passive:true});
 document.addEventListener('change',e=>{if(e.target.dataset.a==='labsel'){LAB().cur=e.target.value;save();render();return}if(e.target.dataset.a==='automail'){PG().autoMail=e.target.checked;save();}if(e.target.dataset.a==='careshare'){S.care.share=e.target.checked;save();if(S.care.share)shareSync();else if(USER)DB.collection('care').doc(USER.uid).delete().catch(()=>{});toast(S.care.share?'Ο γιατρός σου βλέπει τις καταγραφές σου':'Η κοινοποίηση σταμάτησε')}if(e.target.closest('form[data-form=report]'))refreshReport();
   const el=e.target;
   if(el.dataset.a==='diarydate'&&el.value)location.hash='diary/'+el.value;
