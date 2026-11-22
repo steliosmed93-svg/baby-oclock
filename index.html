@@ -43,7 +43,7 @@ main{max-width:1100px;margin:0 auto;padding:18px}
 .tabbar a.on{color:var(--teal);font-weight:600}
 @media(min-width:900px){.tabbar{display:none}.deskNav{display:flex}body{padding-bottom:30px}main{padding:28px 18px}}
 .grid{display:grid;gap:16px}
-@media(min-width:760px){.g2{grid-template-columns:1fr 1fr}.g3{grid-template-columns:repeat(3,1fr)}}
+@media(min-width:760px){.g2{grid-template-columns:1fr 1fr}.g3{grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}}
 .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:18px;box-shadow:var(--shadow)}
 .card.soft{background:var(--surface2);box-shadow:none}
 .hero{background:linear-gradient(135deg,#f6a389 0%,#e9775a 40%,#2f7f7a 100%);color:#fff;border:0}
@@ -143,6 +143,36 @@ details.ex summary{font-weight:600}
 .amenu hr{border:0;border-top:1px solid var(--line);width:100%;margin:6px 0}
 .amenu a,.amenu button{all:unset;cursor:pointer;padding:8px 6px;border-radius:8px;color:var(--ink)}
 .amenu a:hover,.amenu button:hover{background:var(--surface2)}
+.pHero{background:linear-gradient(135deg,#f6a389,#e9775a 50%,#a996d9);color:#fff;border:0}.pHero .pill{background:rgba(255,255,255,.25);color:#fff}
+.wheelWrap{position:relative;max-width:340px;margin:0 auto}
+.wheel{width:100%;height:auto;display:block}
+.wheel .seg{cursor:pointer;transition:opacity .2s,transform .2s;transform-origin:170px 170px}
+.wheel .seg:hover{opacity:.8}
+.wheel .seg.sel{filter:drop-shadow(0 2px 4px rgba(0,0,0,.25))}
+.wheelC{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none}
+.wheelC .big{font-size:3rem;line-height:1.05;transition:color .3s}
+.dayCard{animation:fadeUp .35s ease}
+@keyframes fadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.statrow{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;text-align:center}
+.stat2{display:flex;flex-direction:column;background:var(--surface2);border-radius:14px;padding:10px 6px}
+.stat2 b{font-size:1.4rem}.stat2 span{font-size:.78rem;line-height:1.25}
+.lg{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:4px;vertical-align:middle}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-top:8px}
+.cal .wd{text-align:center;font-size:.75rem;color:var(--muted);font-weight:600}
+.cday{position:relative;aspect-ratio:1;border:0;border-radius:12px;background:#fff;font:inherit;font-weight:600;cursor:pointer;color:var(--ink);border:1px solid var(--line)}
+.cday.c-per{background:#e9775a;color:#fff;border-color:#e9775a}
+.cday.c-perp{background:repeating-linear-gradient(45deg,#fde1d8,#fde1d8 4px,#fff 4px,#fff 8px);border-color:#f2b3a1}
+.cday.c-fert{background:#d5f0ec;border-color:#8fd1c8}
+.cday.c-ov{background:#2f7f7a;color:#fff;border-color:#2f7f7a}
+.cday.c-today{box-shadow:0 0 0 2px var(--ink) inset}
+.cday.c-sel{transform:scale(1.08);box-shadow:0 4px 12px rgba(0,0,0,.18)}
+.cday .mk{position:absolute;bottom:2px;left:50%;transform:translateX(-50%);font-size:.55rem;font-style:normal;background:#c99a2e;color:#fff;border-radius:4px;padding:0 3px}
+.cday .dot2{position:absolute;top:4px;right:4px;width:6px;height:6px;border-radius:50%;background:var(--lilac)}
+.bars{display:flex;align-items:flex-end;gap:8px;height:120px;padding-top:10px}
+.bars div{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:4px}
+.bars span{width:100%;max-width:34px;border-radius:8px 8px 4px 4px}
+.bars b{font-size:.85rem}
+.pMini .big{color:var(--ink)}
 .sectionTitle{display:flex;align-items:baseline;justify-content:space-between;margin:26px 0 10px}
 </style>
 </head>
@@ -167,6 +197,7 @@ const KEY='maziivf.v1';
 const blank={profile:{name:'',onboarded:false},clinic:{name:'',doctor:'',phone:'',lab:'',email:'',address:''},
   cycle:{protocol:'',start:'',trigger:'',opu:'',transfer:'',stage:'5',beta:'',appointments:[]},
   coach:{done:{},notes:{},records:[],checkins:[],stress:{}},
+  period:{starts:[],ends:{},days:{},len:28,bleed:5},
   meds:[],taken:{},scans:[],logs:{},questions:[],journal:[],notified:{}};
 let S;
 try{S=Object.assign(structuredClone(blank),JSON.parse(localStorage.getItem(KEY)||'{}'))}catch(e){S=structuredClone(blank)}
@@ -240,10 +271,11 @@ const I={
  meds:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 2l4 4M17 7l3-3M19 9 8.7 19.3a2.4 2.4 0 0 1-3.4 0l-.6-.6a2.4 2.4 0 0 1 0-3.4L15 5M9 11l4 4M5 19l-3 3"/></svg>',
  diary:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 4h12a4 4 0 0 1 4 4v12H8a4 4 0 0 1-4-4z"/><path d="M8 9h8M8 13h6"/></svg>',
  coach:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/><path d="M9 11h2l1-2 1 4 1-2h1"/></svg>',
+ period:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z"/><path d="M9.5 14.5a2.5 2.5 0 0 0 2.5 2.5"/></svg>',
  more:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg>'
 };
-const TABS=[['today','Σήμερα'],['cycle','Κύκλος'],['meds','Φάρμακα'],['coach','Psy Coach'],['diary','Ημερολόγιο'],['more','Άλλα']];
-const DESK=[['today','Σήμερα'],['cycle','Κύκλος'],['meds','Φάρμακα'],['coach','Psy Coach'],['diary','Ημερολόγιο'],['learn','Μάθε'],['report','Αποστολή'],['more','Άλλα']];
+const TABS=[['today','Σήμερα'],['period','Περίοδος'],['cycle','Θεραπεία'],['meds','Φάρμακα'],['coach','Psy Coach'],['more','Άλλα']];
+const DESK=[['today','Σήμερα'],['period','Περίοδος'],['cycle','Θεραπεία'],['meds','Φάρμακα'],['coach','Psy Coach'],['diary','Ημερολόγιο'],['report','Αποστολή'],['more','Άλλα']];
 
 /* ---------- Cycle logic ---------- */
 function phase(){
@@ -273,7 +305,7 @@ const $=s=>document.querySelector(s);
 function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('show');clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove('show'),2200)}
 function nav(){
   const r=route().split('/')[0];
-  const moreSet=['more','scans','learn','questions','clinic','settings','inject','report'];
+  const moreSet=['more','scans','learn','questions','clinic','settings','inject','report','diary'];
   $('#tabbar').innerHTML=TABS.map(([k,l])=>`<a href="#${k}" class="${(k===r||(k==='more'&&moreSet.includes(r)))?'on':''}">${I[k]}<span>${l}</span></a>`).join('');
   $('#deskNav').innerHTML=DESK.map(([k,l])=>`<a href="#${k}" class="${k===r?'on':''}">${l}</a>`).join('');
 }
@@ -302,6 +334,7 @@ V.today=()=>{
   </div>
   ${trig?`<div class="alert info" style="margin-top:16px"><b>⏰ Trigger: ${fmtDT(S.cycle.trigger)}</b><br>Βάλε ξυπνητήρι στο κινητό. Η ακριβής ώρα είναι σημαντική για την ωοληψία. <a href="#" data-a="ics">Πρόσθεσέ το στο ημερολόγιο</a></div>`:''}
   <div class="grid g3" style="margin-top:16px">
+   ${periodMini()}
    <div class="card"><h3>Πώς νιώθεις σήμερα;</h3>${log?`<p style="font-size:1.8rem;margin:4px 0">${log.mood?MOODS[log.mood-1]:'📝'}</p><p class="small muted">${(log.symptoms||[]).length} συμπτώματα καταγράφηκαν</p>`:'<p class="muted small">Μία καταγραφή την ημέρα βοηθά εσένα και τον γιατρό σου.</p>'}<a class="btn sm" href="#diary">${log?'Επεξεργασία':'Καταγραφή'}</a></div>
    <div class="card"><h3>Επόμενο ραντεβού</h3>${nextAppt?`<p><b>${fmtL(nextAppt.date)}${nextAppt.time?', '+nextAppt.time:''}</b><br>${esc(nextAppt.title)}</p>`:'<p class="muted small">Δεν υπάρχει προγραμματισμένο ραντεβού.</p>'}<a class="btn alt sm" href="#cycle">Ραντεβού</a></div>
    <div class="card coachMini"><span class="pill lilac">💞 Fertility Psy Coach</span><h3 style="margin-top:8px">${(PHASE_COACH[p.key]||PHASE_COACH.none).t}</h3><p class="small">${aff}</p><p class="small" style="margin:0">Για εσένα: <a href="#coach">${EX[(PHASE_COACH[p.key]||PHASE_COACH.none).me[0]].t}</a><br>Για το ζευγάρι: <a href="#coach">${EX[(PHASE_COACH[p.key]||PHASE_COACH.none).co[0]].t}</a></p><a class="btn sm" style="margin-top:10px;background:var(--lilac)" href="#coach">Άνοιξε το Psy Coach</a></div>
@@ -481,10 +514,11 @@ V.scans=()=>{
 V.more=()=>`
   <h1>Περισσότερα</h1>
   <div class="tiles">
+   ${tile('diary','📝','var(--coral-soft)','Ημερολόγιο','Συμπτώματα, διάθεση, βάρος')}
+   ${tile('learn','📖','var(--lilac-soft)','Μάθε','Βήματα, λεξικό, μύθοι')}
    ${tile('scans','🔍','var(--teal-soft)','Υπερηχογραφήματα','Θυλάκια, ενδομήτριο, E2')}
    ${tile('inject','💉','var(--coral-soft)','Οδηγός ενέσεων','Βήμα βήμα')}
-   ${tile('learn','📖','var(--lilac-soft)','Μάθε','Βήματα, λεξικό, μύθοι')}
-   ${tile('coach','💞','var(--lilac-soft)','Fertility Psy Coach','Ψυχολογία για εσένα και το ζευγάρι')}
+      ${tile('coach','💞','var(--lilac-soft)','Fertility Psy Coach','Ψυχολογία για εσένα και το ζευγάρι')}
    ${tile('questions','❓','var(--gold-soft)','Ερωτήσεις','Για το επόμενο ραντεβού')}
    ${tile('clinic','📞','var(--coral-soft)','Κλινική','Επαφές, πότε καλώ')}
    ${tile('report','📧','var(--teal-soft)','Αποστολή σε γιατρό','Γυναικολόγο ή ψυχολόγο')}
@@ -769,7 +803,7 @@ function acct(){
 }
 
 /* ---------- Αναφορά για γυναικολόγο / ψυχολόγο ---------- */
-const RSEC=[['cycle','Κύκλος και ραντεβού','g'],['meds','Φάρμακα και λήψη δόσεων','g'],['scans','Υπερηχογραφήματα και εξετάσεις','g'],['symptoms','Συμπτώματα, σημεία κινδύνου και βάρος','gp'],['mood','Διάθεση και ένταση','gp'],['coach','Psy Coach: ασκήσεις και check-in ζευγαριού','p'],['journal','Προσωπικό ημερολόγιο και καταγραφές σκέψεων','x'],['questions','Ερωτήσεις μου','gp']];
+const RSEC=[['period','Περίοδος και έμμηνος κύκλος','g'],['cycle','Θεραπεία και ραντεβού','g'],['meds','Φάρμακα και λήψη δόσεων','g'],['scans','Υπερηχογραφήματα και εξετάσεις','g'],['symptoms','Συμπτώματα, σημεία κινδύνου και βάρος','gp'],['mood','Διάθεση και ένταση','gp'],['coach','Psy Coach: ασκήσεις και check-in ζευγαριού','p'],['journal','Προσωπικό ημερολόγιο και καταγραφές σκέψεων','x'],['questions','Ερωτήσεις μου','gp']];
 function inRange(d,days){return !days||d>=addDays(today(),-days+1)}
 function buildReport(o){
   const L=[],H=[],D=+o.days||0,c=S.cycle,P=PROTOCOLS[c.protocol];
@@ -779,7 +813,10 @@ function buildReport(o){
   H.push(`<h1>Αναφορά: ${esc(name)}</h1><p class="m">${fmtL(today())} · ${per}${USER&&USER.email?' · '+esc(USER.email):''}</p>`);
   if(o.msg){L.push('Μήνυμα:',o.msg,'');H.push(`<h2>Μήνυμα</h2><p>${esc(o.msg).replace(/\n/g,'<br>')}</p>`)}
   const sec=(t)=>{L.push('== '+t.toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'')+' ==');H.push(`<h2>${t}</h2>`)};
-  if(o.cycle){sec('Κύκλος');const rows=[['Πρωτόκολλο',P?P.name:'-'],['Έναρξη',c.start?fmtL(c.start):'-'],['Trigger',c.trigger?fmtDT(c.trigger):'-'],['Ωοληψία',c.opu?fmtL(c.opu):'-'],['Εμβρυομεταφορά',c.transfer?fmtL(c.transfer)+(c.stage==='5'?' (βλαστοκύστη)':' (3ης ημέρας)'):'-'],['β-hCG',c.beta?fmtL(c.beta):'-'],['Τρέχουσα φάση',phase().title]];
+  if(o.period){sec('Έμμηνος κύκλος');const s=pStats();if(!s.st.length){L.push('Δεν έχει καταγραφεί.');H.push('<p>Δεν έχει καταγραφεί.</p>')}else{const ci=cycleFor(today());const rows=[['Τελευταία περίοδος',fmtL(s.st[s.st.length-1])],['Ημέρα κύκλου σήμερα',String(ci.cd)],['Μέση διάρκεια κύκλου',s.L+' ημέρες'+(s.lens.length?' (από '+s.lens.length+' κύκλους)':' (εκτίμηση)')],['Διάρκειες κύκλων',s.lens.slice(-8).join(', ')||'-'],['Μέση διάρκεια περιόδου',s.B+' ημέρες'],['Επόμενη αναμενόμενη',fmtL(addDays(ci.start,s.L))]];rows.forEach(r=>L.push(r[0]+': '+r[1]));H.push('<table>'+rows.map(r=>`<tr><th>${r[0]}</th><td>${esc(r[1])}</td></tr>`).join('')+'</table>');
+    const pdays=Object.keys(PD().days).filter(d=>inRange(d,D)).sort().filter(d=>{const x=PD().days[d];return x.flow>0||x.pain>0||x.lh||x.mucus||x.temp});if(pdays.length){L.push('Καταγραφές:');pdays.forEach(d=>{const x=PD().days[d];L.push('- '+fmt(d)+': '+[x.flow>0?'ροή '+FLOW[x.flow].toLowerCase():'',x.pain>0?'πόνος '+['','ήπιος','μέτριος','έντονος'][x.pain]:'',x.mucus?'βλέννη '+((MUCUS.find(m=>m[0]===x.mucus)||[])[1]||'').toLowerCase():'',x.lh?'LH '+(x.lh==='pos'?'θετικό':'αρνητικό'):'',x.temp?x.temp+'°C':''].filter(Boolean).join(', '))});H.push('<ul>'+pdays.map(d=>{const x=PD().days[d];return `<li>${fmt(d)}: ${esc([x.flow>0?'ροή '+FLOW[x.flow].toLowerCase():'',x.pain>0?'πόνος '+['','ήπιος','μέτριος','έντονος'][x.pain]:'',x.mucus?'βλέννη '+((MUCUS.find(m=>m[0]===x.mucus)||[])[1]||'').toLowerCase():'',x.lh?'LH '+(x.lh==='pos'?'θετικό':'αρνητικό'):'',x.temp?x.temp+'°C':''].filter(Boolean).join(', '))}</li>`}).join('')+'</ul>')}}L.push('')}
+  if(o.cycle&&!c.protocol&&!c.start){sec('Θεραπεία');L.push('Δεν υπάρχει καταγεγραμμένη θεραπεία.','');H.push('<p>Δεν υπάρχει καταγεγραμμένη θεραπεία.</p>')}
+  else if(o.cycle){sec('Θεραπεία');const rows=[['Πρωτόκολλο',P?P.name:'-'],['Έναρξη',c.start?fmtL(c.start):'-'],['Trigger',c.trigger?fmtDT(c.trigger):'-'],['Ωοληψία',c.opu?fmtL(c.opu):'-'],['Εμβρυομεταφορά',c.transfer?fmtL(c.transfer)+(c.stage==='5'?' (βλαστοκύστη)':' (3ης ημέρας)'):'-'],['β-hCG',c.beta?fmtL(c.beta):'-'],['Τρέχουσα φάση',phase().title]];
     rows.forEach(r=>L.push(r[0]+': '+r[1]));H.push('<table>'+rows.map(r=>`<tr><th>${r[0]}</th><td>${esc(r[1])}</td></tr>`).join('')+'</table>');
     const ap=(c.appointments||[]).filter(a=>inRange(a.date,D)||a.date>=today()).sort((a,b)=>a.date.localeCompare(b.date));
     if(ap.length){L.push('Ραντεβού:');ap.forEach(a=>L.push('- '+fmt(a.date)+(a.time?' '+a.time:'')+': '+a.title));H.push('<h3>Ραντεβού</h3><ul>'+ap.map(a=>`<li>${fmt(a.date)}${a.time?' '+a.time:''}: ${esc(a.title)}</li>`).join('')+'</ul>')}L.push('')}
@@ -839,6 +876,131 @@ V.report=()=>{
     <p class="small muted" style="margin-top:10px">Το email ανοίγει από τη δική σου εφαρμογή email, με έτοιμο κείμενο. Τίποτα δεν στέλνεται αυτόματα.</p></div></div>`;
 };
 
+/* ---------- Monitoring περιόδου ---------- */
+let selDay=null,calMonth=null;
+const GRN=['Ιανουάριος','Φεβρουάριος','Μάρτιος','Απρίλιος','Μάιος','Ιούνιος','Ιούλιος','Αύγουστος','Σεπτέμβριος','Οκτώβριος','Νοέμβριος','Δεκέμβριος'];
+const P_COL={period:'#e9775a',foll:'#f4c9a8',fert:'#8fd1c8',ov:'#2f7f7a',lut:'#cfc4ee',pms:'#a996d9',late:'#c8433b'};
+const P_NAME={period:'Έμμηνος ρύση',foll:'Ωοθυλακική φάση',fert:'Γόνιμο παράθυρο',ov:'Ωορρηξία',lut:'Ωχρινική φάση',pms:'Προεμμηνορρυσιακή φάση',late:'Καθυστέρηση'};
+const FLOW=['Καθόλου','Κηλίδες','Λίγη','Μέτρια','Πολλή'];
+const MUCUS=[['dry','Ξηρή'],['sticky','Κολλώδης'],['creamy','Κρεμώδης'],['egg','Σαν ασπράδι αυγού']];
+function PD(){S.period=S.period||{starts:[],ends:{},days:{},len:28,bleed:5};return S.period}
+function pStats(){
+  const p=PD(),st=p.starts.slice().sort();const lens=[];
+  for(let i=1;i<st.length;i++){const d=days(st[i-1],st[i]);if(d>=15&&d<=60)lens.push(d)}
+  const last=lens.slice(-6);const L=last.length?Math.round(last.reduce((a,b)=>a+b,0)/last.length):(+p.len||28);
+  const bl=st.filter(s=>p.ends[s]).map(s=>days(s,p.ends[s])+1).filter(x=>x>0&&x<12);
+  const B=bl.length?Math.round(bl.reduce((a,b)=>a+b,0)/bl.length):(+p.bleed||5);
+  const spread=last.length>=3?Math.max(...last)-Math.min(...last):null;
+  return {st,lens,L,B,ov:Math.max(8,L-14),spread};
+}
+function cycleFor(date){const {st,L}=pStats();let s=null;for(const x of st)if(x<=date)s=x;if(!s){if(!st.length)return null;
+  // πριν την πρώτη καταγραφή: προβολή προς τα πίσω
+  s=st[0];while(s>date)s=addDays(s,-L)}
+  const idx=st.indexOf(s);const next=idx>=0&&idx<st.length-1?st[idx+1]:null;
+  let cd=days(s,date)+1;if(!next&&idx>=0){/* τρέχων ή μελλοντικός κύκλος */const k=Math.floor((cd-1)/L);if(date>today()&&k>0){s=addDays(s,k*L);cd=days(s,date)+1}}
+  return {start:s,cd,next}}
+function phaseOf(cd,L,B,ov,date){
+  const p=PD();const logged=p.days[date]&&p.days[date].flow>0;
+  if(cd<=B||logged&&cd<=8)return 'period';
+  if(cd>L)return 'late';
+  if(cd===ov)return 'ov';
+  if(cd>=ov-5&&cd<=ov+1)return 'fert';
+  if(cd<ov-5)return 'foll';
+  if(cd>=L-3)return 'pms';
+  return 'lut';
+}
+function hormones(cd,L,ov){const g=(x,m,s)=>Math.exp(-((x-m)**2)/(2*s*s));
+  return {E2:.15+g(cd,ov-1,2.3)+.5*g(cd,ov+7,3),LH:.08+g(cd,ov-1,.8),FSH:.22+.3*g(cd,2,3)+.4*g(cd,ov-1,.8),P:.04+(cd>ov?1:0.1)*g(cd,ov+7,3.4)}}
+function dayText(cd,L,B,ov,ph){
+  const T={
+   period:{body:cd===1?'Πρώτη ημέρα του κύκλου. Το ενδομήτριο που δεν χρειάστηκε αποβάλλεται. Οιστρογόνα και προγεστερόνη είναι στο χαμηλότερο σημείο τους.':cd<=3?'Η FSH αρχίζει να ανεβαίνει και «ξυπνά» μια ομάδα μικρών ωοθυλακίων στις ωοθήκες. Η ροή συνήθως είναι πιο έντονη αυτές τις μέρες.':'Η ροή λιγοστεύει. Τα ωοθυλάκια μεγαλώνουν και αρχίζουν να παράγουν οιστραδιόλη.',
+     tip:'Ζέστη στην κοιλιά, ήπια κίνηση και τροφές πλούσιες σε σίδηρο βοηθούν. Πόνος που σε σταματά από την καθημερινότητα αξίζει να συζητηθεί με τον γυναικολόγο.',
+     ivf:cd>=2&&cd<=3?'Η 2η με 3η ημέρα είναι η κλασική μέρα για υπερηχογράφημα έναρξης (μέτρηση AFC) και αιματολογικές εξετάσεις (FSH, LH, E2). Σε πολλά πρωτόκολλα, εδώ ξεκινούν οι ενέσεις.':'Αν περιμένεις να ξεκινήσεις θεραπεία, ενημέρωσε την κλινική για την 1η ημέρα της περιόδου σου.',chance:'Πολύ χαμηλή'},
+   foll:{body:'Ένα ωοθυλάκιο ξεχωρίζει και γίνεται το «κυρίαρχο». Η οιστραδιόλη ανεβαίνει, το ενδομήτριο παχαίνει ξανά και πολλές γυναίκες νιώθουν περισσότερη ενέργεια και καλύτερη διάθεση.',tip:'Καλή περίοδος για πιο έντονη άσκηση και νέα ξεκινήματα.',ivf:'Σε κύκλο διέγερσης, αυτές οι μέρες είναι οι μέρες των ενέσεων και των υπερηχογραφημάτων παρακολούθησης.',chance:'Χαμηλή'},
+   fert:{body:cd<ov?'Το γόνιμο παράθυρο άνοιξε: τα σπερματοζωάρια ζουν έως 5 ημέρες, οπότε επαφές από σήμερα μπορούν να οδηγήσουν σε σύλληψη. Η τραχηλική βλέννη γίνεται πιο διάφανη και ελαστική.':'Η μέρα μετά την ωορρηξία: το ωάριο ζει περίπου 12 έως 24 ώρες, οπότε υπάρχει ακόμη μικρή πιθανότητα.',tip:cd<ov?'Αν προσπαθείτε φυσικά, επαφές κάθε 1 με 2 ημέρες αυτές τις μέρες. Ένα τεστ ωορρηξίας (LH) βοηθά να βρεις την ακριβή μέρα.':'Ένα θετικό τεστ LH χθες ή προχθές επιβεβαιώνει ότι η ωορρηξία έγινε.',ivf:'Σε μεταφορά κατεψυγμένου εμβρύου σε φυσικό κύκλο, εδώ γίνεται η παρακολούθηση για να βρεθεί η ωορρηξία.',chance:cd>=ov-2?'Υψηλή':'Μέτρια'},
+   ov:{body:'Εκτιμώμενη ημέρα ωορρηξίας. Η απότομη άνοδος της LH (24 έως 36 ώρες πριν) κάνει το ώριμο ωοθυλάκιο να «σπάσει» και να απελευθερώσει το ωάριο. Κάποιες γυναίκες νιώθουν ένα ελαφρύ τσίμπημα στο πλάι.',tip:'Η μέρα με τη μεγαλύτερη πιθανότητα σύλληψης, μαζί με τις 2 προηγούμενες.',ivf:'Στην εξωσωματική, αυτή τη στιγμή τη «μιμείται» η ένεση ωρίμανσης (trigger): η ωοληψία γίνεται 34 έως 36 ώρες μετά, λίγο πριν την ωορρηξία.',chance:'Πολύ υψηλή'},
+   lut:{body:cd<=ov+5?'Το ωχρό σωμάτιο (ό,τι έμεινε από το ωοθυλάκιο) παράγει προγεστερόνη. Η θερμοκρασία σώματος ανεβαίνει λίγο (0,3 έως 0,5°C) και το ενδομήτριο ετοιμάζεται να υποδεχτεί έμβρυο.':'Το «παράθυρο εμφύτευσης»: αν υπάρχει έμβρυο, εμφυτεύεται περίπου 6 έως 10 ημέρες μετά την ωορρηξία. Η προγεστερόνη είναι στο υψηλότερο σημείο της.',tip:'Φούσκωμα, ευαισθησία στο στήθος και κούραση οφείλονται στην προγεστερόνη και δεν είναι σημάδια εγκυμοσύνης ή αποτυχίας.',ivf:'Γι\' αυτό στην εξωσωματική δίνουμε προγεστερόνη (ωχρινική στήριξη) μετά την ωοληψία ή στη FET: για να μιμηθούμε αυτή τη φάση.',chance:'Πολύ χαμηλή'},
+   pms:{body:'Αν δεν έγινε εμφύτευση, το ωχρό σωμάτιο υποχωρεί, προγεστερόνη και οιστρογόνα πέφτουν και ο οργανισμός ετοιμάζεται για την επόμενη περίοδο. Ευερεθιστότητα, πονοκέφαλος ή λιγούρες είναι συχνά.',tip:'Ύπνος, λιγότερη καφεΐνη και αλάτι, ήπια άσκηση. Αν περιμένεις αποτέλεσμα, ένα τεστ τώρα μπορεί να είναι ακόμα αρνητικό.',ivf:'Αν είσαι σε αναμονή μετά από εμβρυομεταφορά, συνέχισε τα φάρμακα κανονικά μέχρι την ημέρα της β-hCG.',chance:'Πολύ χαμηλή'},
+   late:{body:'Η περίοδος αργεί '+(cd-L)+(cd-L===1?' ημέρα':' ημέρες')+' σε σχέση με τον μέσο κύκλο σου. Άγχος, ταξίδια, ασθένεια ή αλλαγές βάρους μπορούν να μετακινήσουν την ωορρηξία.',tip:'Αν υπάρχει πιθανότητα εγκυμοσύνης, κάνε ένα τεστ. Αν καθυστερεί συχνά ή πάνω από μία εβδομάδα, ενημέρωσε τον γυναικολόγο σου.',ivf:'',chance:'-'}
+  };return T[ph]}
+
+function wheelSVG(info,sel){
+  const {L,B,ov}=pStats();const N=Math.max(L,info?info.cd:0);const R=150,r=104,cx=170,cy=170;const out=[];
+  for(let d=1;d<=N;d++){const date=addDays(info.start,d-1);const ph=phaseOf(d,L,B,ov,date);const a0=-Math.PI/2+2*Math.PI*(d-1)/N+.012,a1=-Math.PI/2+2*Math.PI*d/N-.012;
+    const P=(rr,a)=>(cx+rr*Math.cos(a)).toFixed(1)+','+(cy+rr*Math.sin(a)).toFixed(1);const isSel=date===sel,isT=date===today();
+    const ro=isSel?R+10:R;
+    out.push(`<path class="seg${isSel?' sel':''}" data-a="pday" data-d="${date}" d="M${P(r,a0)} L${P(ro,a0)} A${ro},${ro} 0 0 1 ${P(ro,a1)} L${P(r,a1)} A${r},${r} 0 0 0 ${P(r,a0)}Z" fill="${P_COL[ph]}"${isT?' stroke="#2b2a33" stroke-width="2.5"':''}><title>Ημέρα ${d}: ${P_NAME[ph]}</title></path>`);
+    if(d===1||d===ov||d===N||d%7===0){const am=(a0+a1)/2;out.push(`<text x="${(cx+(r-14)*Math.cos(am)).toFixed(1)}" y="${(cy+(r-14)*Math.sin(am)+4).toFixed(1)}" text-anchor="middle" font-size="11" fill="#6f6b75" pointer-events="none">${d}</text>`)}
+    if(isT){const am=(a0+a1)/2;out.push(`<circle cx="${(cx+(R+20)*Math.cos(am)).toFixed(1)}" cy="${(cy+(R+20)*Math.sin(am)).toFixed(1)}" r="6" fill="#2b2a33"/>`)}}
+  return `<svg viewBox="0 0 340 340" class="wheel">${out.join('')}</svg>`;
+}
+function hormoneSVG(cd,L,ov){
+  const W=320,H=120,pad=8;const N=Math.max(L,cd);const X=d=>pad+(W-2*pad)*(d-1)/(N-1);const cols={E2:'#e9775a',LH:'#2f7f7a',FSH:'#c99a2e',P:'#8a78c2'};
+  const lines=Object.keys(cols).map(k=>{let p='';for(let d=1;d<=N;d+=.5){const v=hormones(d,L,ov)[k];p+=(p?'L':'M')+X(d).toFixed(1)+','+(H-pad-(H-2*pad)*Math.min(v,1.15)/1.15).toFixed(1)}return `<path d="${p}" fill="none" stroke="${cols[k]}" stroke-width="2.5" stroke-linecap="round"/>`}).join('');
+  return `<svg viewBox="0 0 ${W} ${H}" class="chart"><rect x="${X(cd)-6}" y="0" width="12" height="${H}" rx="6" fill="#2b2a33" opacity=".08"/><line x1="${X(cd)}" x2="${X(cd)}" y1="4" y2="${H-4}" stroke="#2b2a33" stroke-dasharray="3 3"/>${lines}</svg>
+  <div class="row small" style="gap:12px;justify-content:center">${Object.entries({E2:'Οιστραδιόλη',LH:'LH',FSH:'FSH',P:'Προγεστερόνη'}).map(([k,l])=>`<span><i class="lg" style="background:${cols[k]}"></i>${l}</span>`).join('')}</div>`;
+}
+function calendarHTML(sel){
+  const p=PD(),{L,B,ov,st}=pStats();const m=calMonth||today().slice(0,7);const [y,mo]=m.split('-').map(Number);const first=new Date(y,mo-1,1);const dim=new Date(y,mo,0).getDate();
+  const lead=(first.getDay()+6)%7;const cells=[];for(let i=0;i<lead;i++)cells.push('<span></span>');
+  for(let d=1;d<=dim;d++){const date=m+'-'+pad(d);const ci=st.length?cycleFor(date):null;let cls='';
+    const lg=p.days[date]||{};
+    if(lg.flow>0)cls='c-per';else if(ci){const ph=phaseOf(ci.cd,L,B,ov,date);if(ph==='period'&&(date>today()||!st.includes(ci.start)||date>(p.ends[ci.start]||addDays(ci.start,B-1))))cls=date>today()?'c-perp':'';else if(ph==='period')cls='c-per';else if(ph==='ov')cls='c-ov';else if(ph==='fert')cls='c-fert'}
+    cells.push(`<button class="cday ${cls}${date===today()?' c-today':''}${date===sel?' c-sel':''}" data-a="pday" data-d="${date}">${d}${lg.lh==='pos'?'<i class="mk">LH</i>':''}${lg.notes||lg.pain>0||lg.mucus?'<i class="dot2"></i>':''}</button>`)}
+  return `<div class="row between"><button class="btn ghost" data-a="calnav" data-v="-1">‹</button><b>${GRN[mo-1]} ${y}</b><button class="btn ghost" data-a="calnav" data-v="1">›</button></div>
+   <div class="cal"><span class="wd">Δ</span><span class="wd">Τ</span><span class="wd">Τ</span><span class="wd">Π</span><span class="wd">Π</span><span class="wd">Σ</span><span class="wd">Κ</span>${cells.join('')}</div>
+   <div class="row small" style="gap:12px;margin-top:8px"><span><i class="lg" style="background:${P_COL.period}"></i>Περίοδος</span><span><i class="lg" style="background:#f6c2b2"></i>Αναμενόμενη</span><span><i class="lg" style="background:${P_COL.fert}"></i>Γόνιμες</span><span><i class="lg" style="background:${P_COL.ov}"></i>Ωορρηξία</span></div>`;
+}
+V.period=()=>{
+  const p=PD(),s=pStats();
+  if(!s.st.length)return `<h1>Η περίοδός μου</h1>
+   <div class="grid g2"><div class="card pHero"><span class="pill">Monitoring κύκλου</span><h2 style="margin-top:10px">Μάθε τι συμβαίνει στο σώμα σου, κάθε μέρα</h2><p>Καταχώρισε την 1η ημέρα της τελευταίας σου περιόδου. Η εφαρμογή θα υπολογίσει τη φάση του κύκλου, τις γόνιμες μέρες και την επόμενη περίοδο, και θα σου εξηγεί τι κάνουν οι ορμόνες σου κάθε μέρα.</p></div>
+   <div class="card"><form data-form="pstart"><label>1η ημέρα της τελευταίας περιόδου</label><input type="date" name="start" max="${today()}" required>
+    <div class="fields two"><div><label>Συνήθης διάρκεια κύκλου (ημέρες)</label><input type="number" name="len" value="${p.len}" min="18" max="60"></div><div><label>Πόσες μέρες κρατά η περίοδος</label><input type="number" name="bleed" value="${p.bleed}" min="1" max="12"></div></div>
+    <button class="btn coral" style="margin-top:12px">Ξεκινάμε</button></form></div></div>`;
+  const sel=selDay||today();const info=cycleFor(sel)||{start:s.st[s.st.length-1],cd:1};const ph=phaseOf(info.cd,s.L,s.B,s.ov,sel);const tx=dayText(info.cd,s.L,s.B,s.ov,ph);
+  const ti=cycleFor(today());const nextP=addDays(ti.start,s.L);const toNext=days(today(),nextP);const lg=p.days[sel]||{};
+  const ovDate=addDays(ti.start,s.ov-1);
+  const isPer=lg.flow>0;const curStart=s.st.filter(x=>x<=today()).pop();const open=curStart&&!p.ends[curStart]&&days(curStart,today())<12;
+  return `<div class="row between"><h1 style="margin:0">Η περίοδός μου</h1><div class="row">${open?`<button class="btn alt sm" data-a="pend">Τέλος περιόδου</button>`:''}<button class="btn coral sm" data-a="pnow">🩸 Ξεκίνησε σήμερα</button></div></div>
+  <div class="grid g2" style="margin-top:14px">
+   <div class="card" style="text-align:center">
+    <div class="wheelWrap">${wheelSVG(info,sel)}<div class="wheelC"><span class="small muted">${sel===today()?'Σήμερα':fmt(sel)}</span><b class="big" style="color:${P_COL[ph]==='#f4c9a8'?'#c07a45':P_COL[ph]}">${info.cd}</b><span class="small">ημέρα κύκλου</span><span class="pill" style="background:${P_COL[ph]}33;color:#2b2a33;margin-top:6px">${P_NAME[ph]}</span></div></div>
+    <input type="range" min="1" max="${Math.max(s.L,info.cd)}" value="${info.cd}" data-a="pscrub" data-s="${info.start}" style="width:100%;margin-top:6px" aria-label="Μετακίνησε για να δεις κάθε ημέρα">
+    <p class="small muted">Σύρε ή πάτα μια ημέρα στον κύκλο για να δεις τι συμβαίνει.</p>
+    <div class="statrow"><div class="stat2"><b>${toNext>=0?toNext:'+'+(-toNext)}</b><span>${toNext>=0?'ημέρες για την περίοδο':'ημέρες καθυστέρηση'}</span><span class="small muted">${fmt(nextP)}</span></div><div class="stat2"><b>${fmt(ovDate).split(' ')[0]}</b><span>ωορρηξία</span><span class="small muted">${GRM[parse(ovDate).getMonth()].slice(0,4)}. (εκτίμηση)</span></div><div class="stat2"><b>${s.L}</b><span>μέσος κύκλος</span><span class="small muted">περίοδος ${s.B} ημ.</span></div></div>
+   </div>
+   <div class="card dayCard" style="border-top:6px solid ${P_COL[ph]}">
+    <div class="row between"><h2 style="margin:0">${fmtL(sel)}</h2><span class="pill" style="background:${P_COL[ph]}33;color:#2b2a33">Ημέρα ${info.cd}</span></div>
+    <h3 style="margin-top:12px">Τι συμβαίνει σήμερα</h3><p>${tx.body}</p>
+    <h3>Οι ορμόνες σου</h3>${hormoneSVG(info.cd,s.L,s.ov)}
+    <div class="grid g2" style="gap:10px;margin-top:10px"><div class="card soft" style="padding:12px"><b class="small">💡 Συμβουλή</b><p class="small" style="margin:4px 0 0">${tx.tip}</p></div>
+    ${tx.ivf?`<div class="card soft" style="padding:12px;background:var(--teal-soft)"><b class="small">🧪 Για την εξωσωματική</b><p class="small" style="margin:4px 0 0">${tx.ivf}</p></div>`:''}</div>
+    <p class="small" style="margin-top:10px">Πιθανότητα σύλληψης με φυσική επαφή: <b>${tx.chance}</b></p>
+   </div>
+  </div>
+  <div class="grid g2" style="margin-top:16px">
+   <div class="card">${calendarHTML(sel)}</div>
+   <div class="card"><h2>Καταγραφή: ${fmt(sel)}</h2>
+    <label>Ροή</label><div class="chips">${FLOW.map((f,i)=>`<button type="button" class="chip ${(lg.flow||0)===i?'on':''}" data-a="pflow" data-v="${i}">${i?'🩸'.repeat(Math.min(i,3))+' ':''}${f}</button>`).join('')}</div>
+    <label>Πόνος</label><div class="chips">${['Καθόλου','Ήπιος','Μέτριος','Έντονος'].map((f,i)=>`<button type="button" class="chip ${(lg.pain||0)===i?'on':''}" data-a="ppain" data-v="${i}">${f}</button>`).join('')}</div>
+    <label>Τραχηλική βλέννη</label><div class="chips">${MUCUS.map(([k,l])=>`<button type="button" class="chip ${lg.mucus===k?'on':''}" data-a="pmucus" data-v="${k}">${l}</button>`).join('')}</div>
+    <label>Τεστ ωορρηξίας (LH)</label><div class="chips">${[['','Δεν έκανα'],['neg','Αρνητικό'],['pos','Θετικό']].map(([k,l])=>`<button type="button" class="chip ${(lg.lh||'')===k?'on':''}" data-a="plh" data-v="${k}">${l}</button>`).join('')}</div>
+    <form data-form="pday" class="fields two"><div><label>Θερμοκρασία πρωινή (°C)</label><input name="temp" inputmode="decimal" value="${esc(lg.temp||'')}" placeholder="π.χ. 36.45"></div><div><label>Σημείωση</label><input name="notes" value="${esc(lg.notes||'')}"></div><div><button class="btn sm">Αποθήκευση</button></div></form>
+   </div>
+  </div>
+  <div class="grid g2" style="margin-top:16px">
+   <div class="card"><h2>Οι κύκλοι μου</h2>${s.lens.length?`<div class="bars">${s.lens.slice(-8).map(l=>`<div><span style="height:${Math.min(100,l*2)}px;background:${l<21||l>35?'var(--red)':'var(--lilac)'}"></span><b>${l}</b></div>`).join('')}</div>${s.spread!=null&&s.spread>7?'<p class="small alert info" style="margin-top:10px">Οι κύκλοι σου διαφέρουν πάνω από 7 ημέρες μεταξύ τους. Αξίζει να το αναφέρεις στον γυναικολόγο σου.</p>':s.lens.some(l=>l<21||l>35)?'<p class="small alert info" style="margin-top:10px">Κύκλοι μικρότεροι από 21 ή μεγαλύτεροι από 35 ημέρες καλό είναι να ελεγχθούν.</p>':'<p class="small muted">Οι κύκλοι σου είναι σταθεροί.</p>'}`:'<p class="muted small">Μετά τη 2η περίοδο θα βλέπεις εδώ τη διάρκεια κάθε κύκλου.</p>'}
+    <div class="list" style="margin-top:10px">${s.st.slice().reverse().slice(0,8).map(x=>`<div class="item"><span class="small"><b>${fmtL(x)}</b>${p.ends[x]?' έως '+fmt(p.ends[x]):''}</span><button class="btn ghost" data-a="pdel" data-d="${x}">✕</button></div>`).join('')}</div>
+    <form data-form="padd" class="row" style="margin-top:10px"><input type="date" name="start" max="${today()}" required style="flex:1"><button class="btn alt sm">+ Παλαιότερη περίοδος</button></form></div>
+   <div class="card soft"><h3>Πώς υπολογίζεται</h3><p class="small">Η ωορρηξία γίνεται συνήθως περίπου 14 ημέρες πριν την επόμενη περίοδο. Η εφαρμογή χρησιμοποιεί τον μέσο όρο των τελευταίων κύκλων σου. Όσο περισσότερες περιόδους καταγράφεις, τόσο πιο ακριβείς οι εκτιμήσεις. Τα τεστ LH και η θερμοκρασία βοηθούν να επιβεβαιώσεις την ωορρηξία.</p><p class="small"><b>Σημαντικό:</b> οι εκτιμήσεις δεν είναι μέθοδος αντισύλληψης και δεν αντικαθιστούν τον έλεγχο από γυναικολόγο.</p>
+    <form data-form="pset" class="fields two"><div><label>Προεπιλογή κύκλου</label><input type="number" name="len" value="${p.len}" min="18" max="60"></div><div><label>Προεπιλογή περιόδου</label><input type="number" name="bleed" value="${p.bleed}" min="1" max="12"></div><div><button class="btn alt sm">Αποθήκευση</button></div></form></div>
+  </div>`;
+};
+function periodMini(){const s=pStats();if(!s.st.length)return `<div class="card pMini"><h3>🩸 Η περίοδός μου</h3><p class="small muted">Κατέγραψε την περίοδό σου και δες κάθε μέρα τι συμβαίνει στον κύκλο σου.</p><a class="btn sm coral" href="#period">Ξεκίνα</a></div>`;
+  const i=cycleFor(today()),ph=phaseOf(i.cd,s.L,s.B,s.ov,today()),n=days(today(),addDays(i.start,s.L));
+  return `<div class="card pMini" style="border-left:6px solid ${P_COL[ph]}"><span class="small muted">Ημέρα κύκλου</span><div class="row" style="gap:8px"><b class="big" style="font-size:2rem">${i.cd}</b><span class="pill" style="background:${P_COL[ph]}33;color:#2b2a33">${P_NAME[ph]}</span></div><p class="small">${n>=0?'Περίοδος σε '+n+' ημέρες':'Καθυστέρηση '+(-n)+' ημέρες'}</p><a class="btn sm alt" href="#period">Τι συμβαίνει σήμερα →</a></div>`}
+
 /* ---------- Events ---------- */
 let breathTimer=null;
 function stopBreath(){clearInterval(breathTimer);breathTimer=null;const b=$('#breath');if(b){b.classList.remove('in');b.textContent='Έτοιμη;'}}
@@ -870,6 +1032,14 @@ document.addEventListener('click',e=>{
     if(a==='rshare'){const f=new File([r.html],'anafora-'+today()+'.html',{type:'text/html'});if(navigator.canShare&&navigator.canShare({files:[f]})){navigator.share({files:[f],title:r.subject,text:r.subject}).catch(()=>{})}else{download(new Blob([r.html],{type:'text/html'}),f.name);toast('Το αρχείο κατέβηκε: επισύναψέ το στο email σου')}}
     if(a==='rprint'){const w=window.open('','_blank');if(!w){toast('Επίτρεψε τα αναδυόμενα παράθυρα');return}w.document.write(r.html);w.document.close();setTimeout(()=>w.print(),400)}
     return}
+  if(a==='pday'){selDay=el.dataset.d;calMonth=selDay.slice(0,7);render();return}
+  if(a==='calnav'){const [y,m]=(calMonth||today().slice(0,7)).split('-').map(Number);const d=new Date(y,m-1+(+el.dataset.v),1);calMonth=d.getFullYear()+'-'+pad(d.getMonth()+1);render();return}
+  if(a==='pnow'){const p=PD(),t=today();if(!p.starts.includes(t))p.starts.push(t);p.starts.sort();p.days[t]=Object.assign(p.days[t]||{},{flow:Math.max(3,(p.days[t]||{}).flow||0)});selDay=t;save();render();toast('Καταγράφηκε η 1η ημέρα περιόδου');return}
+  if(a==='pend'){const p=PD(),cs=p.starts.filter(x=>x<=today()).pop();if(cs){p.ends[cs]=addDays(today(),-1)<cs?cs:today();save();render();toast('Καταγράφηκε το τέλος της περιόδου')}return}
+  if(a==='pdel'){const p=PD();if(confirm('Διαγραφή αυτής της περιόδου;')){p.starts=p.starts.filter(x=>x!==el.dataset.d);delete p.ends[el.dataset.d];save();render()}return}
+  if(['pflow','ppain','pmucus','plh'].includes(a)){const p=PD(),d=selDay||today(),L=p.days[d]=p.days[d]||{};const key={pflow:'flow',ppain:'pain',pmucus:'mucus',plh:'lh'}[a];const v=a==='pflow'||a==='ppain'?+el.dataset.v:el.dataset.v;L[key]=(L[key]===v&&a==='pmucus')?'':v;
+    if(a==='pflow'&&v>=2&&!p.starts.some(s=>s<=d&&days(s,d)<10)){p.starts.push(d);p.starts.sort();toast('Καταγράφηκε νέα περίοδος: '+fmt(d))}
+    save();render();return}
   if(a==='stress'){S.coach.stress[today()]=+el.dataset.v;save();render()}
   if(a==='exdone'){const id=el.dataset.id,d=S.coach.done[id]=S.coach.done[id]||[],i=d.indexOf(today());i<0?d.push(today()):d.splice(i,1);save();const op=el.closest('details')?.id;render();if(op){const x=document.getElementById(op);if(x)x.open=true}}
   if(a==='delcheck'){S.coach.checkins=S.coach.checkins.filter(c=>c.id!==el.dataset.id);save();render()}
@@ -879,7 +1049,7 @@ document.addEventListener('click',e=>{
   if(a==='export'){download(new Blob([JSON.stringify(S,null,2)],{type:'application/json'}),'baby-oclock-backup-'+today()+'.json');toast('Το αντίγραφο αποθηκεύτηκε')}
   if(a==='wipe'&&confirm('Θα διαγραφούν οριστικά όλα τα δεδομένα από αυτή τη συσκευή. Συνέχεια;')){localStorage.removeItem(KEY);S=structuredClone(blank);render();onboard()}
 });
-document.addEventListener('input',e=>{if(e.target.closest('form[data-form=report]'))refreshReport()});
+document.addEventListener('input',e=>{if(e.target.closest('form[data-form=report]'))refreshReport();if(e.target.dataset.a==='pscrub'){selDay=addDays(e.target.dataset.s,+e.target.value-1);const v=e.target.value;render();const r=document.querySelector('[data-a=pscrub]');if(r){r.value=v;r.focus()}}});
 document.addEventListener('click',e=>{const m=$('#amenu');if(m&&!m.hidden&&!e.target.closest('.acct'))m.hidden=true},true);
 document.addEventListener('change',e=>{if(e.target.closest('form[data-form=report]'))refreshReport();
   const el=e.target;
@@ -898,6 +1068,10 @@ document.addEventListener('submit',e=>{
   if(k==='record'){S.coach.records.push({id:uid(),date:today(),...v});save();toast('Αποθηκεύτηκε');render();const x=document.getElementById('ex-record');if(x)x.open=true;return}
   if(k==='checkin'){S.coach.checkins.push({id:uid(),date:today(),...v});toast('Το check-in αποθηκεύτηκε')}
   if(k==='report')return;
+  if(k==='pstart'){const p=PD();p.len=+v.len||28;p.bleed=+v.bleed||5;p.starts=[v.start];p.ends[v.start]=addDays(v.start,p.bleed-1);selDay=today();toast('Έτοιμο! Δες τι συμβαίνει σήμερα')}
+  if(k==='padd'){const p=PD();if(!p.starts.includes(v.start)){p.starts.push(v.start);p.starts.sort()}toast('Προστέθηκε')}
+  if(k==='pset'){const p=PD();p.len=+v.len||28;p.bleed=+v.bleed||5;toast('Αποθηκεύτηκε')}
+  if(k==='pday'){const p=PD(),d=selDay||today();p.days[d]=Object.assign(p.days[d]||{},{temp:v.temp,notes:v.notes});toast('Αποθηκεύτηκε')}
   if(k==='q'){S.questions.push({id:uid(),text:v.text,done:false})}
   if(k==='clinic'){Object.assign(S.clinic,v);toast('Αποθηκεύτηκε')}
   if(k==='profile'){S.profile.name=v.name;toast('Αποθηκεύτηκε')}
