@@ -1654,6 +1654,9 @@ document.addEventListener('click',e=>{
   const el=e.target.closest('[data-a]');if(!el||el.tagName==='INPUT')return;const a=el.dataset.a;
   if(a==='take'){const d=el.dataset.d;S.taken[d]=S.taken[d]||{};S.taken[d][el.dataset.k]=!S.taken[d][el.dataset.k];save();render();const mid=el.dataset.k.split('@')[0],md=S.meds.find(m=>m.id===mid);if(S.taken[d][el.dataset.k]&&md&&md.type==='inj')injPick(md.name);return}
   if(a==='bday'){bodySel=addDays(bodySel||today(),+el.dataset.v);if(bodySel>today())bodySel=today();render();return}
+  if(a==='bleon'){bleConnect();return}
+  if(a==='bleoff'){try{BLE.dev&&BLE.dev.gatt.disconnect()}catch(x){}BLE.dev=null;render();return}
+  if(a==='blesave'){bleSave();return}
   if(a==='bmetric'){bodyMetric=el.dataset.v;render();return}
   if(a==='bdemo'){bodyDemo();return}
   if(a==='bdemodel'){const D=BD().days;Object.keys(D).forEach(k=>{if(D[k].demo)delete D[k]});save();render();toast('Τα δοκιμαστικά δεδομένα διαγράφηκαν');return}
@@ -1885,7 +1888,7 @@ V.body=()=>{
     <div><label>Βήματα</label><input name="steps" inputmode="numeric" value="${d.steps??''}"></div><div><label>Λεπτά άσκησης</label><input name="exMin" inputmode="numeric" value="${d.exMin??''}"></div>
     <div><label>Πίεση (συστ./διαστ.)</label><div class="row" style="flex-wrap:nowrap"><input name="sys" inputmode="numeric" value="${d.sys??''}" placeholder="120"><input name="dia" inputmode="numeric" value="${d.dia??''}" placeholder="80"></div></div><div><label>VO2max</label><input name="vo2" inputmode="decimal" value="${d.vo2??''}"></div>
    </div><button class="btn" style="margin-top:12px">Αποθήκευση</button></form></div>
-   <div class="grid"><div class="card"><h2>⌚ Apple Watch</h2><p class="small">Σήμερα: <b>εισαγωγή από την εφαρμογή Υγεία</b> του iPhone (μία φορά την εβδομάδα ή όποτε θέλεις). Στην έκδοση για App Store: <b>αυτόματος συγχρονισμός</b> με το Apple Watch.</p><a class="btn alt sm" href="#body/import">Εισαγωγή από Apple Health</a></div>
+   <div class="grid">${bleCard()}<div class="card"><h2>⌚ Apple Watch</h2><p class="small">Σήμερα: <b>εισαγωγή από την εφαρμογή Υγεία</b> του iPhone (μία φορά την εβδομάδα ή όποτε θέλεις). Στην έκδοση για App Store: <b>αυτόματος συγχρονισμός</b> με το Apple Watch.</p><a class="btn alt sm" href="#body/import">Εισαγωγή από Apple Health</a></div>
     <div class="card soft"><h3>Ρυθμίσεις</h3><form data-form="bcfg" class="row"><label style="margin:0">Βασική ανάγκη ύπνου</label><input name="need" type="number" step="0.25" min="5" max="11" value="${B.cfg.need}" style="width:90px"><button class="btn alt sm">OK</button></form>${has?`<div class="row" style="margin-top:10px">${Object.values(B.days).some(x=>x.demo)?'<button class="btn ghost" data-a="bdemodel">Διαγραφή δοκιμαστικών δεδομένων</button>':''}</div>`:''}
      <p class="small muted" style="margin-top:8px">Οι βαθμολογίες (ανάκαμψη, φόρτος, ύπνος) υπολογίζονται από την εφαρμογή με βάση τον δικό σου μέσο όρο 30 ημερών. Δεν είναι οι αλγόριθμοι της Apple και δεν αποτελούν ιατρική μέτρηση.</p></div></div>
   </div>`;
@@ -1941,8 +1944,42 @@ function bodyDemo(){
 }
 function bodyMini(){const r=recoveryOf(today());if(r==null&&!Object.keys(BD().days).length)return '';const st=strainOf(today()),sp=sleepPerf(today());return `<a class="card bodymini" href="#body"><div class="rings sm">${ring(r,100,recCol(r),'Ανάκαμψη',r+'%')}${ring(st,21,'#3b7dd8','Φόρτος',st)}${ring(sp,100,'#8a78c2','Ύπνος',sp+'%')}</div></a>`}
 
+/* ---------- Bluetooth: δικό μας βραχιόλι ή έτοιμοι αισθητήρες (Web Bluetooth, GATT) ---------- */
+const BOC_SVC='b0c10000-6f63-4c6b-9b0b-0000000000b0',BOC_SUM='b0c10001-6f63-4c6b-9b0b-0000000000b0';
+let BLE={dev:null,name:'',hr:[],rr:[],temp:null,spo2:null,bat:null,t0:0,status:''};
+function rmssd(rr){const v=rr.filter(x=>x>300&&x<2000);const c=[];for(let i=1;i<v.length;i++){if(Math.abs(v[i]-v[i-1])/v[i-1]<0.2)c.push((v[i]-v[i-1])**2)}return c.length>=10?Math.round(Math.sqrt(c.reduce((a,b)=>a+b,0)/c.length)):null}
+function ieeeFloat(dv,o){const m=dv.getUint8(o)|(dv.getUint8(o+1)<<8)|(dv.getUint8(o+2)<<16);const mm=m&0x800000?m-0x1000000:m;return mm*Math.pow(10,dv.getInt8(o+3))}
+function sfloat(v){let m=v&0x0FFF;if(m>=0x0800)m-=0x1000;let e=v>>12;if(e>=8)e-=16;return m*Math.pow(10,e)}
+function bleLive(){const el=$('#blelive');if(!el)return;const n=BLE.hr.length,hr=n?BLE.hr[n-1]:null,sec=BLE.t0?Math.round((Date.now()-BLE.t0)/1000):0,h=rmssd(BLE.rr);
+  el.innerHTML=BLE.dev?`<div class="row" style="gap:16px;flex-wrap:wrap"><div class="vit"><span class="small muted">Παλμοί τώρα</span><b>${hr??'–'}<small> bpm</small></b></div><div class="vit"><span class="small muted">HRV (RMSSD)</span><b>${h??'–'}<small> ms</small></b><span class="small muted">${BLE.rr.length} παλμοί RR</span></div>${BLE.temp!=null?`<div class="vit"><span class="small muted">Θερμοκρασία</span><b>${BLE.temp.toFixed(2)}<small> °C</small></b></div>`:''}${BLE.spo2!=null?`<div class="vit"><span class="small muted">SpO2</span><b>${BLE.spo2}<small> %</small></b></div>`:''}${BLE.bat!=null?`<div class="vit"><span class="small muted">Μπαταρία</span><b>${BLE.bat}<small> %</small></b></div>`:''}</div><p class="small muted">Συνδεδεμένο: <b>${esc(BLE.name)}</b> · ${Math.floor(sec/60)}:${String(sec%60).padStart(2,'0')} λεπτά μέτρησης${sec<120?' · μείνε ξαπλωμένη και ακίνητη τουλάχιστον 2 λεπτά':''}</p>`:`<p class="small muted">${BLE.status||'Καμία συνδεδεμένη συσκευή.'}</p>`}
+async function bleConnect(){
+  if(!navigator.bluetooth){toast('Ο browser δεν υποστηρίζει Bluetooth');return}
+  try{
+    const dev=await navigator.bluetooth.requestDevice({filters:[{services:['heart_rate']},{services:['health_thermometer']},{services:[BOC_SVC]},{namePrefix:'BabyOClock'}],optionalServices:['heart_rate','health_thermometer','battery_service',0x1822,BOC_SVC]});
+    BLE={dev,name:dev.name||'Συσκευή',hr:[],rr:[],temp:null,spo2:null,bat:null,t0:Date.now(),status:'Σύνδεση…'};bleLive();
+    dev.addEventListener('gattserverdisconnected',()=>{BLE.dev=null;BLE.status='Η συσκευή αποσυνδέθηκε.';bleLive();render()});
+    const g=await dev.gatt.connect();const svc=async u=>{try{return await g.getPrimaryService(u)}catch(e){return null}};
+    const hs=await svc('heart_rate');if(hs){const c=await hs.getCharacteristic('heart_rate_measurement');c.addEventListener('characteristicvaluechanged',e=>{const dv=e.target.value,f=dv.getUint8(0);let o=1,hr;if(f&1){hr=dv.getUint16(o,true);o+=2}else{hr=dv.getUint8(o);o+=1}if(f&8)o+=2;if(f&16){for(;o+1<dv.byteLength;o+=2)BLE.rr.push(Math.round(dv.getUint16(o,true)/1024*1000))}if(hr>0)BLE.hr.push(hr);bleLive()});await c.startNotifications()}
+    const ts=await svc('health_thermometer');if(ts){const c=await ts.getCharacteristic('temperature_measurement');c.addEventListener('characteristicvaluechanged',e=>{const dv=e.target.value,f=dv.getUint8(0);let t=ieeeFloat(dv,1);if(f&1)t=(t-32)*5/9;if(t>25&&t<45)BLE.temp=Math.round(t*100)/100;bleLive()});await c.startNotifications()}
+    const ps=await svc(0x1822);if(ps){try{const c=await ps.getCharacteristic(0x2A5E);const read=dv=>{const s=sfloat(dv.getUint16(1,true));if(s>50&&s<=100)BLE.spo2=Math.round(s);bleLive()};c.addEventListener('characteristicvaluechanged',e=>read(e.target.value));await c.startNotifications()}catch(e){}}
+    const bs=await svc('battery_service');if(bs){try{BLE.bat=(await(await bs.getCharacteristic('battery_level')).readValue()).getUint8(0)}catch(e){}}
+    const bo=await svc(BOC_SVC);if(bo){try{const raw=new TextDecoder().decode(await(await bo.getCharacteristic(BOC_SUM)).readValue());bleImportSummary(raw)}catch(e){}}
+    BLE.status='';render();
+  }catch(e){if(e.name!=='NotFoundError'){BLE.status='Η σύνδεση απέτυχε: '+e.message;bleLive()}}
+}
+function bleImportSummary(raw){let a;try{a=JSON.parse(raw)}catch(e){return 0}a=Array.isArray(a)?a:[a];const B=BD(),K=['hrv','rhr','rr','spo2','temp','sleepH','deep','rem','light','awake','bed','wake','steps','kcal','exMin','sys','dia'];let n=0;
+  a.forEach(x=>{if(!x||!/^\d{4}-\d\d-\d\d$/.test(x.date||''))return;const o=B.days[x.date]=B.days[x.date]||{};K.forEach(k=>{if(x[k]!=null)o[k]=x[k]});delete o.demo;o.src='band';n++;if(x.temp!=null){const P=PD();P.days[x.date]=Object.assign(P.days[x.date]||{},{temp:x.temp})}});
+  if(n){save();toast('Συγχρονίστηκαν '+n+' νύχτες από το βραχιόλι')}return n}
+function bleSave(){const d=today(),B=BD(),o=B.days[d]=B.days[d]||{};const h=rmssd(BLE.rr);const hr=BLE.hr.slice(-90);
+  if(h==null&&!hr.length&&BLE.temp==null){toast('Δεν υπάρχουν ακόμα αρκετά δεδομένα');return}
+  if(h!=null)o.hrv=h;if(hr.length){const s=hr.slice().sort((a,b)=>a-b);o.rhr=s[Math.floor(s.length*0.25)]}if(BLE.temp!=null){o.temp=BLE.temp;const P=PD();P.days[d]=Object.assign(P.days[d]||{},{temp:BLE.temp})}if(BLE.spo2!=null)o.spo2=BLE.spo2;delete o.demo;o.src=o.src||'band';save();toast('Η πρωινή μέτρηση αποθηκεύτηκε');render()}
+function bleCard(){const ok=!!navigator.bluetooth;return `<div class="card"><h2>📡 Δική μας συσκευή (Bluetooth)</h2>
+ <p class="small">Σύνδεση με το βραχιόλι Baby O’Clock (πρωτότυπο) ή με έτοιμο αισθητήρα παλμών που μεταδίδει διαστήματα RR, π.χ. ζώνη Polar H10. Κάνε την <b>πρωινή μέτρηση</b>: ξαπλωμένη, 2 έως 3 λεπτά, πριν σηκωθείς.</p>
+ ${ok?`<div class="row">${BLE.dev?`<button class="btn" data-a="blesave">Αποθήκευση πρωινής μέτρησης</button><button class="btn ghost" data-a="bleoff">Αποσύνδεση</button>`:`<button class="btn alt" data-a="bleon">Σύνδεση συσκευής</button>`}</div>`:`<p class="small muted">Ο browser σου δεν υποστηρίζει Bluetooth. Δουλεύει σε Chrome (Android, υπολογιστής). Στο iPhone θα δουλεύει μέσα από την εφαρμογή του App Store.</p>`}
+ <div id="blelive" style="margin-top:10px"></div></div>`}
+
 /* ---------- Router ---------- */
-function render(){const r=route().split('/')[0];const fn=V[r]||V.today;if(r!=='coach')clearTimeout(breathTimer);$('#app').innerHTML=fn();nav();if(r==='preg'||r==='baby')startTickers();else clearInterval(contrTick);if(r==='files')hydrateThumbs()}
+function render(){const r=route().split('/')[0];const fn=V[r]||V.today;if(r!=='coach')clearTimeout(breathTimer);$('#app').innerHTML=fn();nav();if(r==='preg'||r==='baby')startTickers();else clearInterval(contrTick);if(r==='files')hydrateThumbs();if(r==='body')bleLive()}
 window.addEventListener('hashchange',()=>{render();scrollTo(0,0)});
 applyTheme();render();onboard();acct();fbInit();showLock();
 setInterval(tick,30000);tick();

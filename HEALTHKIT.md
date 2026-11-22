@@ -39,3 +39,11 @@
 6. Προαιρετικά: watchOS companion app για καταγραφή συσπάσεων και κινήσεων μωρού από τον καρπό.
 
 Σημείωση App Store: τα δεδομένα HealthKit δεν χρησιμοποιούνται για διαφήμιση και δεν μοιράζονται χωρίς ρητή συναίνεση (κανόνας 5.1.3). Η εφαρμογή δεν κάνει διάγνωση.
+
+## Δικό μας βραχιόλι (Bluetooth LE)
+Στην ενότητα «Σώμα & Ανάκαμψη» υπάρχει κάρτα «Δική μας συσκευή» (Web Bluetooth: Chrome σε Android/υπολογιστή, στο iPhone μέσω της native εφαρμογής). Υποστηρίζει:
+- Heart Rate 0x180D / 0x2A37 (παλμοί + RR → RMSSD), π.χ. Polar H10
+- Health Thermometer 0x1809 / 0x2A1C
+- Pulse Oximeter 0x1822 / 0x2A5E
+- Battery 0x180F / 0x2A19
+- Baby O’Clock Night `b0c10000-6f63-4c6b-9b0b-0000000000b0`, summary `b0c10001-…`: JSON (αντικείμενο ή πίνακας) με `date` και τα πεδία του `S.body.days`.
