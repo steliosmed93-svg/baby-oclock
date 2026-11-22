@@ -227,6 +227,14 @@ details.ex summary{font-weight:600}
 @keyframes zp{50%{transform:scale(1.18)}}
 .orline{display:flex;align-items:center;gap:10px;margin:14px 0 4px;color:var(--muted);font-size:.85rem}.orline::before,.orline::after{content:'';flex:1;height:1px;background:var(--line)}
 .sectionTitle{display:flex;align-items:baseline;justify-content:space-between;margin:26px 0 10px}
+.rings{display:flex;justify-content:space-around;gap:8px;flex-wrap:wrap}
+.ringc{display:flex;flex-direction:column;align-items:center;gap:2px;width:30%;min-width:92px;max-width:150px}.ringc svg{width:100%}.ringc span{font-size:.85rem;color:var(--muted);text-align:center}
+.rings.sm .ringc{min-width:70px;max-width:100px}.rarc{transition:stroke-dashoffset .8s ease}
+.vits{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:16px}@media(min-width:760px){.vits{grid-template-columns:repeat(5,1fr)}}
+.vit{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px;display:flex;flex-direction:column;gap:2px}.vit b{font-size:1.3rem}.vit small{font-size:.75rem;color:var(--muted);font-weight:400}
+.vit.up{border-color:#2e9d6a}.vit.down{border-color:#d9534f}
+.stages{display:flex;height:16px;border-radius:8px;overflow:hidden;margin:8px 0}
+.bodymini{display:block;text-decoration:none;color:inherit}
 </style>
 </head>
 <body>
@@ -329,7 +337,7 @@ const I={
  more:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg>'
 };
 const TABS=[['today','Σήμερα'],['period','Περίοδος'],['cycle','Θεραπεία'],['meds','Φάρμακα'],['coach','Psy Coach'],['more','Άλλα']];
-const DESK=[['today','Σήμερα'],['period','Περίοδος'],['cycle','Θεραπεία'],['meds','Φάρμακα'],['coach','Psy Coach'],['diary','Ημερολόγιο'],['report','Αποστολή'],['more','Άλλα']];
+const DESK=[['today','Σήμερα'],['period','Περίοδος'],['cycle','Θεραπεία'],['meds','Φάρμακα'],['coach','Psy Coach'],['diary','Ημερολόγιο'],['body','Σώμα'],['more','Άλλα']];
 
 /* ---------- Cycle logic ---------- */
 function phase(){
@@ -359,7 +367,7 @@ const $=s=>document.querySelector(s);
 function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('show');clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove('show'),2200)}
 function nav(){
   const r=route().split('/')[0];
-  const moreSet=['more','scans','learn','questions','clinic','settings','inject','report','diary','period','preg','care','files','lifestyle','wellbeing','psybook','after','negative','baby','privacy','terms','embryo','partner'];
+  const moreSet=['more','scans','learn','questions','clinic','settings','inject','report','diary','period','preg','care','files','lifestyle','wellbeing','psybook','after','negative','baby','privacy','terms','embryo','partner','body'];
   const PGA=S.preg&&S.preg.active,sw=a=>a.map(x=>x[0]==='period'&&PGA?['preg','Εγκυμοσύνη']:x);
   $('#tabbar').innerHTML=sw(TABS).map(([k,l])=>`<a href="#${k}" class="${(k===r||(k==='more'&&moreSet.includes(r)&&!(k===r)&&!((PGA&&r==='preg')||(!PGA&&r==='period'))))?'on':''}">${I[k]}<span>${l}</span></a>`).join('');
   $('#deskNav').innerHTML=sw(DESK).map(([k,l])=>`<a href="#${k}" class="${k===r?'on':''}">${l}</a>`).join('');
@@ -393,7 +401,7 @@ V.today=()=>{
   ${S.baby&&S.baby.born?`<a class="card inbnote" href="#baby" style="background:var(--coral-soft)"><b>👶 ${esc(S.baby.name||'Το μωρό μου')}</b><span class="small">Θηλασμός, πάνες, διάθεση, εμβόλια</span></a>`:''}
   ${trig?`<div class="alert info" style="margin-top:16px"><b>⏰ Trigger: ${fmtDT(S.cycle.trigger)}</b><br>Βάλε ξυπνητήρι στο κινητό. Η ακριβής ώρα είναι σημαντική για την ωοληψία. <a href="#" data-a="ics">Πρόσθεσέ το στο ημερολόγιο</a></div>`:''}
   <div class="grid g3" style="margin-top:16px">
-   ${S.preg&&S.preg.active?pregMini():periodMini()}
+   ${S.preg&&S.preg.active?pregMini():periodMini()}${bodyMini()}
    <div class="card"><h3>Πώς νιώθεις σήμερα;</h3>${log?`<p style="font-size:1.8rem;margin:4px 0">${log.mood?MOODS[log.mood-1]:'📝'}</p><p class="small muted">${(log.symptoms||[]).length} συμπτώματα καταγράφηκαν</p>`:'<p class="muted small">Μία καταγραφή την ημέρα βοηθά εσένα και τον γιατρό σου.</p>'}<a class="btn sm" href="#diary">${log?'Επεξεργασία':'Καταγραφή'}</a></div>
    <div class="card"><h3>Επόμενο ραντεβού</h3>${nextAppt?`<p><b>${fmtL(nextAppt.date)}${nextAppt.time?', '+nextAppt.time:''}</b><br>${esc(nextAppt.title)}</p>`:'<p class="muted small">Δεν υπάρχει προγραμματισμένο ραντεβού.</p>'}<a class="btn alt sm" href="#cycle">Ραντεβού</a></div>
    <div class="card coachMini"><span class="pill lilac">💞 Fertility Psy Coach</span><h3 style="margin-top:8px">${(PHASE_COACH[p.key]||PHASE_COACH.none).t}</h3><p class="small">${aff}</p><p class="small" style="margin:0">Για εσένα: <a href="#coach">${EX[(PHASE_COACH[p.key]||PHASE_COACH.none).me[0]].t}</a><br>Για το ζευγάρι: <a href="#coach">${EX[(PHASE_COACH[p.key]||PHASE_COACH.none).co[0]].t}</a></p><a class="btn sm" style="margin-top:10px;background:var(--lilac)" href="#coach">Άνοιξε το Psy Coach</a></div>
@@ -582,6 +590,7 @@ V.more=()=>`
    ${tile('preg','🤰','var(--lilac-soft)','Εγκυμοσύνη','Εβδομάδες, συσπάσεις, κινήσεις')}
    ${tile('after','🌗','var(--surface2)','Μετά το αποτέλεσμα','Θετικό ή αρνητικό')}
    ${tile('baby','👶','var(--coral-soft)','Μετά τον τοκετό','Θηλασμός, διάθεση, εμβόλια')}
+   ${tile('body','⌚','var(--teal-soft)','Σώμα & Ανάκαμψη','Ύπνος, HRV, Apple Watch')}
    ${tile('lifestyle','🥗','var(--teal-soft)','Τρόπος ζωής','Διατροφή, άσκηση, ύπνος')}
    ${tile('wellbeing','📈','var(--lilac-soft)','Check-in ευεξίας','Μία φορά τον μήνα')}
    ${tile('psybook','🗓','var(--lilac-soft)','Ραντεβού ψυχολόγου','Ατομικά ή ως ζευγάρι')}
@@ -900,7 +909,7 @@ function acct(){
 }
 
 /* ---------- Αναφορά για γυναικολόγο / ψυχολόγο ---------- */
-const RSEC=[['preg','Εγκυμοσύνη: συσπάσεις και κινήσεις','g'],['period','Περίοδος και έμμηνος κύκλος','g'],['cycle','Θεραπεία και ραντεβού','g'],['meds','Φάρμακα και λήψη δόσεων','g'],['scans','Υπερηχογραφήματα και εξετάσεις','g'],['symptoms','Συμπτώματα, σημεία κινδύνου και βάρος','gp'],['mood','Διάθεση και ένταση','gp'],['coach','Psy Coach: ασκήσεις και check-in ζευγαριού','p'],['journal','Προσωπικό ημερολόγιο και καταγραφές σκέψεων','x'],['questions','Ερωτήσεις μου','gp']];
+const RSEC=[['preg','Εγκυμοσύνη: συσπάσεις και κινήσεις','g'],['period','Περίοδος και έμμηνος κύκλος','g'],['body','Σώμα: ύπνος, HRV, παλμοί, ανάκαμψη','g'],['cycle','Θεραπεία και ραντεβού','g'],['meds','Φάρμακα και λήψη δόσεων','g'],['scans','Υπερηχογραφήματα και εξετάσεις','g'],['symptoms','Συμπτώματα, σημεία κινδύνου και βάρος','gp'],['mood','Διάθεση και ένταση','gp'],['coach','Psy Coach: ασκήσεις και check-in ζευγαριού','p'],['journal','Προσωπικό ημερολόγιο και καταγραφές σκέψεων','x'],['questions','Ερωτήσεις μου','gp']];
 function inRange(d,days){return !days||d>=addDays(today(),-days+1)}
 function buildReport(o){
   const L=[],H=[],D=+o.days||0,c=S.cycle,P=PROTOCOLS[c.protocol];
@@ -912,6 +921,10 @@ function buildReport(o){
   const sec=(t)=>{L.push('== '+t.toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'')+' ==');H.push(`<h2>${t}</h2>`)};
   if(o.preg&&S.preg&&S.preg.active&&S.preg.lmp){sec('Εγκυμοσύνη');const w=gaDays(),st=cStats();const rows=[['Ηλικία κύησης',Math.floor(w/7)+'+'+(w%7)+' εβδομάδες'],['Πιθανή ημερομηνία τοκετού',fmtL(addDays(S.preg.lmp,280))],['Συσπάσεις τελευταίας ώρας',String(st.n60)],['Συσπάσεις τελευταίων 24 ωρών',String(st.C.filter(c=>c.s>Date.now()-864e5).length)],['Μέση διάρκεια / διάστημα',(st.dur||'-')+'″ / '+(st.ivl?mmss(st.ivl):'-')]];rows.forEach(r=>L.push(r[0]+': '+r[1]));H.push('<table>'+rows.map(r=>`<tr><th>${r[0]}</th><td>${esc(r[1])}</td></tr>`).join('')+'</table>');
     const kk=S.preg.kicks.filter(k=>k.end&&inRange(ymd(new Date(k.start)),D));if(kk.length){L.push('Μετρήσεις κινήσεων:');kk.forEach(k=>L.push('- '+fmt(ymd(new Date(k.start)))+': '+k.count+' κινήσεις σε '+Math.round((k.end-k.start)/60000)+' λεπτά'));H.push('<h3>Κινήσεις μωρού</h3><ul>'+kk.map(k=>`<li>${fmt(ymd(new Date(k.start)))}: ${k.count} κινήσεις σε ${Math.round((k.end-k.start)/60000)}′</li>`).join('')+'</ul>')}L.push('')}
+  if(o.body){const BDy=BD().days;const bd=Object.keys(BDy).filter(d=>inRange(d,D)&&!BDy[d].demo).sort();if(bd.length){sec('Σώμα και ανάκαμψη (wearable / χειροκίνητα)');const av=k=>{const v=bd.map(d=>BDy[d][k]).filter(x=>x!=null&&x!=='').map(Number);return v.length?(v.reduce((a,b)=>a+b,0)/v.length):null};const f=(x,dg=0)=>x==null?'-':x.toFixed(dg);
+    const rows=[['Ημέρες με δεδομένα',String(bd.length)],['HRV μ.ό.',f(av('hrv'))+' ms'],['Παλμοί ηρεμίας μ.ό.',f(av('rhr'))+' bpm'],['Αναπνοές μ.ό.',f(av('rr'),1)+'/λεπτό'],['SpO2 μ.ό.',f(av('spo2'))+'%'],['Ύπνος μ.ό.',f(av('sleepH'),1)+' ώρες'],['Βήματα μ.ό.',f(av('steps'))]];rows.forEach(r=>L.push(r[0]+': '+r[1]));H.push('<table>'+rows.map(r=>`<tr><th>${r[0]}</th><td>${esc(r[1])}</td></tr>`).join('')+'</table>');
+    const tl=bd.slice(-14);H.push('<table><tr><th>Ημ/νία</th><th>Ανάκαμψη</th><th>HRV</th><th>RHR</th><th>Θερμ.</th><th>Ύπνος</th><th>Φόρτος</th></tr>'+tl.map(d=>{const x=BDy[d];return `<tr><td>${fmt(d)}</td><td>${recoveryOf(d)??'-'}%</td><td>${x.hrv??'-'}</td><td>${x.rhr??'-'}</td><td>${x.temp??'-'}</td><td>${x.sleepH??'-'}</td><td>${strainOf(d)??'-'}</td></tr>`}).join('')+'</table>');
+    tl.forEach(d=>{const x=BDy[d];L.push('- '+fmt(d)+': ανάκαμψη '+(recoveryOf(d)??'-')+'%, HRV '+(x.hrv??'-')+', RHR '+(x.rhr??'-')+', ύπνος '+(x.sleepH??'-')+' ώρες')});L.push('')}}
   if(o.period){sec('Έμμηνος κύκλος');const s=pStats();if(!s.st.length){L.push('Δεν έχει καταγραφεί.');H.push('<p>Δεν έχει καταγραφεί.</p>')}else{const ci=cycleFor(today());const rows=[['Τελευταία περίοδος',fmtL(s.st[s.st.length-1])],['Ημέρα κύκλου σήμερα',String(ci.cd)],['Μέση διάρκεια κύκλου',s.L+' ημέρες'+(s.lens.length?' (από '+s.lens.length+' κύκλους)':' (εκτίμηση)')],['Διάρκειες κύκλων',s.lens.slice(-8).join(', ')||'-'],['Μέση διάρκεια περιόδου',s.B+' ημέρες'],['Επόμενη αναμενόμενη',fmtL(addDays(ci.start,s.L))]];rows.forEach(r=>L.push(r[0]+': '+r[1]));H.push('<table>'+rows.map(r=>`<tr><th>${r[0]}</th><td>${esc(r[1])}</td></tr>`).join('')+'</table>');
     const pdays=Object.keys(PD().days).filter(d=>inRange(d,D)).sort().filter(d=>{const x=PD().days[d];return x.flow>0||x.pain>0||x.lh||x.mucus||x.temp||x.pads||(x.sym||[]).length||(x.feels||[]).length});if(pdays.length){L.push('Καταγραφές:');pdays.forEach(d=>{const x=PD().days[d];L.push('- '+fmt(d)+': '+[x.flow>0?'ροή '+FLOW[x.flow].toLowerCase():'',x.pain>0?'πόνος '+['','ήπιος','μέτριος','έντονος'][x.pain]:'',x.mucus?'βλέννη '+((MUCUS.find(m=>m[0]===x.mucus)||[])[1]||'').toLowerCase():'',x.lh?'LH '+(x.lh==='pos'?'θετικό':'αρνητικό'):'',x.temp?x.temp+'°C':'',x.pads?x.pads+' σερβιέτες/ταμπόν':'',x.soak?'γεμίζει 1+ την ώρα':'',x.clots==='big'?'μεγάλοι θρόμβοι':x.clots==='small'?'μικροί θρόμβοι':'',(x.sym||[]).map(s=>(PSYM.find(y=>y[0]===s)||[])[1]).filter(Boolean).join(', '),(x.feels||[]).map(s=>((FEELS.find(y=>y[0]===s)||[])[1]||'').replace(/^\S+\s/,'')).filter(Boolean).join(', ')].filter(Boolean).join(', '))});H.push('<ul>'+pdays.map(d=>{const x=PD().days[d];return `<li>${fmt(d)}: ${esc([x.flow>0?'ροή '+FLOW[x.flow].toLowerCase():'',x.pain>0?'πόνος '+['','ήπιος','μέτριος','έντονος'][x.pain]:'',x.mucus?'βλέννη '+((MUCUS.find(m=>m[0]===x.mucus)||[])[1]||'').toLowerCase():'',x.lh?'LH '+(x.lh==='pos'?'θετικό':'αρνητικό'):'',x.temp?x.temp+'°C':'',x.pads?x.pads+' σερβιέτες/ταμπόν':'',x.soak?'γεμίζει 1+ την ώρα':'',x.clots==='big'?'μεγάλοι θρόμβοι':x.clots==='small'?'μικροί θρόμβοι':'',(x.sym||[]).map(s=>(PSYM.find(y=>y[0]===s)||[])[1]).filter(Boolean).join(', '),(x.feels||[]).map(s=>((FEELS.find(y=>y[0]===s)||[])[1]||'').replace(/^\S+\s/,'')).filter(Boolean).join(', ')].filter(Boolean).join(', '))}</li>`}).join('')+'</ul>')}}L.push('')}
   if(o.cycle&&!c.protocol&&!c.start){sec('Θεραπεία');L.push('Δεν υπάρχει καταγεγραμμένη θεραπεία.','');H.push('<p>Δεν υπάρχει καταγεγραμμένη θεραπεία.</p>')}
@@ -1241,6 +1254,7 @@ function shareSummary(){
   const pdays={};const P=PD();Object.keys(P.days).filter(d=>d>=addDays(t,-60)).forEach(d=>pdays[d]=P.days[d]);
   const ps=pStats();const g=PG();
   return {name:S.profile.name||USER.displayName||'',email:USER.email||'',phone:S.profile.phone||'',updatedMs:Date.now(),
+    body:(()=>{const D=BD().days,o={};Object.keys(D).filter(d=>d>=addDays(t,-30)).forEach(d=>{const x=Object.assign({},D[d]);x.rec=recoveryOf(d);x.strain=strainOf(d);o[d]=x});return o})(),
     cycle:S.cycle,meds:S.meds,scans:S.scans.slice(-30),logs,lab:S.lab||null,
     period:{starts:P.starts.slice(-12),ends:P.ends,days:pdays,avgLen:ps.L,avgBleed:ps.B},
     preg:g.active?{lmp:g.lmp,vitals:(g.vitals||[]).slice(-40),contr:g.contr.filter(c=>c.s>Date.now()-864e5),kicks:g.kicks.slice(-10)}:null,
@@ -1639,6 +1653,11 @@ function stopBreath(){clearInterval(breathTimer);breathTimer=null;const b=$('#br
 document.addEventListener('click',e=>{
   const el=e.target.closest('[data-a]');if(!el||el.tagName==='INPUT')return;const a=el.dataset.a;
   if(a==='take'){const d=el.dataset.d;S.taken[d]=S.taken[d]||{};S.taken[d][el.dataset.k]=!S.taken[d][el.dataset.k];save();render();const mid=el.dataset.k.split('@')[0],md=S.meds.find(m=>m.id===mid);if(S.taken[d][el.dataset.k]&&md&&md.type==='inj')injPick(md.name);return}
+  if(a==='bday'){bodySel=addDays(bodySel||today(),+el.dataset.v);if(bodySel>today())bodySel=today();render();return}
+  if(a==='bmetric'){bodyMetric=el.dataset.v;render();return}
+  if(a==='bdemo'){bodyDemo();return}
+  if(a==='bdemodel'){const D=BD().days;Object.keys(D).forEach(k=>{if(D[k].demo)delete D[k]});save();render();toast('Τα δοκιμαστικά δεδομένα διαγράφηκαν');return}
+  if(a==='bwdel'){const d=BD().days[bodySel||today()];if(d&&d.workouts){d.workouts.splice(+el.dataset.i,1);save();render()}return}
   e.preventDefault();
   const L=d=>S.logs[d]=S.logs[d]||{symptoms:[],flags:[],mood:0,weight:'',notes:''};
   if(a==='sym'||a==='flag'){const l=L(el.dataset.d),arr=a==='sym'?(l.symptoms=l.symptoms||[]):(l.flags=l.flags||[]);const i=arr.indexOf(el.dataset.k);i<0?arr.push(el.dataset.k):arr.splice(i,1);save();render()}
@@ -1727,7 +1746,7 @@ document.addEventListener('click',e=>{
 });
 document.addEventListener('input',e=>{if(e.target.closest('form[data-form=report]'))refreshReport();if(e.target.dataset.a==='pscrub'){selDay=addDays(e.target.dataset.s,+e.target.value-1);const v=e.target.value;render();const r=document.querySelector('[data-a=pscrub]');if(r){r.value=v;r.focus()}}});
 const closeMenu=e=>{const m=$('#amenu');if(m&&!m.hidden&&(!e||!e.target.closest('.acct')))m.hidden=true};document.addEventListener('click',closeMenu,true);document.addEventListener('touchstart',closeMenu,{capture:true,passive:true});window.addEventListener('hashchange',()=>closeMenu());window.addEventListener('scroll',()=>closeMenu(),{passive:true});
-document.addEventListener('change',e=>{if(e.target.dataset.a==='labsel'){LAB().cur=e.target.value;save();render();return}if(e.target.dataset.a==='automail'){PG().autoMail=e.target.checked;save();}if(e.target.dataset.a==='careshare'){S.care.share=e.target.checked;save();if(S.care.share)shareSync();else if(USER)DB.collection('care').doc(USER.uid).delete().catch(()=>{});toast(S.care.share?'Ο γιατρός σου βλέπει τις καταγραφές σου':'Η κοινοποίηση σταμάτησε')}if(e.target.closest('form[data-form=report]'))refreshReport();
+document.addEventListener('change',e=>{if(e.target.dataset.a==='ahimport'&&e.target.files[0]){importAppleHealth(e.target.files[0]);return}if(e.target.dataset.a==='labsel'){LAB().cur=e.target.value;save();render();return}if(e.target.dataset.a==='automail'){PG().autoMail=e.target.checked;save();}if(e.target.dataset.a==='careshare'){S.care.share=e.target.checked;save();if(S.care.share)shareSync();else if(USER)DB.collection('care').doc(USER.uid).delete().catch(()=>{});toast(S.care.share?'Ο γιατρός σου βλέπει τις καταγραφές σου':'Η κοινοποίηση σταμάτησε')}if(e.target.closest('form[data-form=report]'))refreshReport();
   const el=e.target;
   if(el.dataset.a==='diarydate'&&el.value)location.hash='diary/'+el.value;
   if(el.dataset.a==='import'&&el.files[0]){const r=new FileReader();r.onload=()=>{try{S=Object.assign(structuredClone(blank),JSON.parse(r.result));save();render();toast('Η επαναφορά ολοκληρώθηκε')}catch(x){toast('Μη έγκυρο αρχείο')}};r.readAsText(el.files[0])}
@@ -1763,6 +1782,9 @@ document.addEventListener('submit',e=>{
   if(k==='padd'){const p=PD();if(!p.starts.includes(v.start)){p.starts.push(v.start);p.starts.sort()}toast('Προστέθηκε')}
   if(k==='pset'){const p=PD();p.len=+v.len||28;p.bleed=+v.bleed||5;toast('Αποθηκεύτηκε')}
   if(k==='pday'){const p=PD(),d=selDay||today();p.days[d]=Object.assign(p.days[d]||{},{temp:v.temp,notes:v.notes});toast('Αποθηκεύτηκε')}
+  if(k==='bday'){const B=BD(),d=bodySel||today(),o=B.days[d]=B.days[d]||{};['hrv','rhr','rr','spo2','temp','sleepH','deep','rem','steps','exMin','sys','dia','vo2'].forEach(x=>{const n=String(v[x]||'').replace(',','.');if(n===''){delete o[x]}else if(!isNaN(+n))o[x]=+n});delete o.demo;o.src=o.src||'manual';if(o.temp!=null){const P=PD();P.days[d]=Object.assign(P.days[d]||{},{temp:o.temp})}toast('Αποθηκεύτηκε')}
+  if(k==='bwork'){const d=BD().days[bodySel||today()]=BD().days[bodySel||today()]||{};(d.workouts=d.workouts||[]).push({type:v.type,min:+v.min,int:+v.int});toast('Η άσκηση προστέθηκε')}
+  if(k==='bcfg'){BD().cfg.need=+v.need||8;toast('Αποθηκεύτηκε')}
   if(k==='q'){S.questions.push({id:uid(),text:v.text,done:false})}
   if(k==='clinic'){Object.assign(S.clinic,v);toast('Αποθηκεύτηκε')}
   if(k==='profile'){S.profile.name=v.name;S.profile.phone=v.phone||'';toast('Αποθηκεύτηκε')}
@@ -1777,6 +1799,147 @@ function onboard(){
   m.innerHTML=`<div class="card"><img src="icon.svg" alt="" width="56"><h2 style="margin-top:10px">Καλώς ήρθες</h2><p>Το «Baby O’Clock» είναι ο βοηθός σου στην εξωσωματική. Σε βοηθά να οργανώσεις τον κύκλο σου: φάρμακα, ραντεβού, συμπτώματα, και να καταλαβαίνεις κάθε βήμα.</p><ul class="small"><li>Τα δεδομένα σου μένουν <b>στη συσκευή σου</b>, ή στον <b>λογαριασμό σου Google</b> αν συνδεθείς. Κανείς άλλος δεν τα βλέπει.</li><li>Η εφαρμογή <b>δεν αντικαθιστά</b> τις οδηγίες του γιατρού σου.</li><li>Σε έντονα συμπτώματα, καλείς την κλινική.</li><li>Στο <b>Fertility Psy Coach</b> θα βρεις ασκήσεις για εσένα και για το ζευγάρι.</li></ul><form data-form="onboard"><label>Πώς να σε λέω; (προαιρετικό)</label><input name="name"><button class="btn" style="margin-top:14px;width:100%;justify-content:center">Ξεκινάμε</button></form><p class="small muted" style="text-align:center;margin-top:12px">Έχεις ήδη λογαριασμό; <a href="#" data-a="signin" onclick="this.closest('.modal').remove()">Σύνδεση</a> για να φέρεις τις καταγραφές σου.</p></div>`;
   document.body.appendChild(m);
 }
+
+/* =====================================================================
+   ΣΩΜΑ & ΑΝΑΚΑΜΨΗ (τύπου WHOOP) · έτοιμο για Apple Health / Apple Watch
+   ===================================================================== */
+function BD(){S.body=S.body||{days:{},cfg:{need:8}};S.body.cfg=S.body.cfg||{need:8};return S.body}
+let bodySel=null,bodyMetric='rec';
+const BM={hrv:['HRV','ms',1],rhr:['Παλμοί ηρεμίας','bpm',-1],rr:['Αναπνοές','/λεπτό',-1],spo2:['SpO2','%',1],temp:['Θερμοκρασία','°C',0]};
+function bBase(k,date,n=30){const D=BD().days;const v=Object.keys(D).filter(d=>d<date&&d>=addDays(date,-n)&&D[d][k]!=null&&D[d][k]!=='').map(d=>+D[d][k]);if(v.length<3)return null;const m=v.reduce((a,b)=>a+b,0)/v.length;const sd=Math.sqrt(v.reduce((a,b)=>a+(b-m)**2,0)/v.length)||1;return {m,sd:Math.max(sd,k==='temp'?0.1:k==='hrv'?4:1),n:v.length}}
+function bPhase(date){const s=pStats();if(!s.st.length)return null;const c=cycleFor(date);if(!c)return null;return phaseOf(c.cd,s.L,s.B,s.ov,date)}
+const isLut=p=>p==='lut'||p==='pms';
+function sleepNeed(date){const B=BD(),y=B.days[addDays(date,-1)]||{};let need=+B.cfg.need||8;const st=strainOf(addDays(date,-1));if(st!=null&&st>10)need+=(st-10)*0.05;let debt=0;for(let i=1;i<=3;i++){const d=B.days[addDays(date,-i)];if(d&&d.sleepH)debt+=Math.max(0,(+B.cfg.need||8)-d.sleepH)}need+=debt*0.25;if(isLut(bPhase(date)))need+=0.25;if(PG().active)need+=0.5;return Math.round(need*10)/10}
+function sleepPerf(date){const d=BD().days[date];if(!d||!d.sleepH)return null;return Math.min(100,Math.round(d.sleepH/sleepNeed(date)*100))}
+function tempDelta(date){const d=BD().days[date];if(!d||d.temp==null||d.temp==='')return null;const b=bBase('temp',date,60);return b?Math.round((+d.temp-b.m)*100)/100:null}
+function recoveryOf(date){
+  const d=BD().days[date];if(!d)return null;const z=(k,dir)=>{if(d[k]==null||d[k]==='')return null;const b=bBase(k,date);return b?dir*(+d[k]-b.m)/b.sd:0};
+  const zh=z('hrv',1),zr=z('rhr',-1),zb=z('rr',-1);if(zh==null&&zr==null)return null;
+  const sp=sleepPerf(date);let s=50+15*(0.55*(zh||0)+0.3*(zr||0)+0.15*(zb||0))+(sp!=null?40*(sp/100-0.85):0);
+  const td=tempDelta(date);if(td!=null&&td>0.5&&!isLut(bPhase(date)))s-=10;if(d.spo2&&+d.spo2<94)s-=10;
+  return Math.max(1,Math.min(99,Math.round(s)));
+}
+const INT=[['','—'],[1,'Χαλαρή'],[2,'Ελαφριά'],[3,'Μέτρια'],[4,'Έντονη'],[5,'Μέγιστη']];
+function strainOf(date){const d=BD().days[date];if(!d)return null;const w=(d.workouts||[]);let load=w.reduce((a,x)=>a+(+x.min||0)*(+x.int||3),0);const wm=w.reduce((a,x)=>a+(+x.min||0),0);
+  load+=Math.max(0,(+d.exMin||0)-wm)*2.5+(+d.steps||0)/1000*4;if(!load&&!d.steps&&!w.length&&!d.exMin)return null;return Math.round(21*(1-Math.exp(-load/220))*10)/10}
+const recCol=r=>r==null?'#bbb':r>=67?'#2e9d6a':r>=34?'#e7b85a':'#d9534f';
+function strainTarget(date,rec){
+  let t=rec==null?[8,14]:rec>=67?[14,18]:rec>=34?[10,14]:[0,10];const notes=[];const ph=phase().key;
+  if(['stim','post'].includes(ph)&&S.cycle.start){t=[Math.min(t[0],6),Math.min(t[1],10)];notes.push('Στη διέγερση και μετά την ωοληψία οι ωοθήκες είναι μεγαλωμένες: μόνο ήπια άσκηση, χωρίς άλματα και στροφές.')}
+  if(PG().active){t=[Math.min(t[0],8),Math.min(t[1],13)];notes.push('Στην εγκυμοσύνη: μέτρια άσκηση, να μπορείς να μιλάς άνετα.')}
+  const bp=bPhase(date),dd=PD().days[date]||{};if(bp==='period'&&(dd.pain>=2||(dd.flow||0)>=3)){t=[Math.min(t[0],6),Math.min(t[1],11)];notes.push('Έντονη ροή ή πόνος σήμερα: ήπια κίνηση βοηθά, χωρίς υπερβολές.')}
+  if(isLut(bp))notes.push('Ωχρινική φάση: η HRV πέφτει και οι παλμοί ανεβαίνουν φυσιολογικά λόγω της προγεστερόνης. Μην ανησυχείς για μικρότερη ανάκαμψη.');
+  return {t,notes};
+}
+function ring(v,max,col,label,txt){const r=46,c=2*Math.PI*r,p=v==null?0:Math.min(1,v/max);return `<div class="ringc"><svg viewBox="0 0 110 110"><circle cx="55" cy="55" r="${r}" fill="none" stroke="var(--line)" stroke-width="10"/><circle cx="55" cy="55" r="${r}" fill="none" stroke="${col}" stroke-width="10" stroke-linecap="round" stroke-dasharray="${c}" stroke-dashoffset="${c*(1-p)}" transform="rotate(-90 55 55)" class="rarc"/><text x="55" y="58" text-anchor="middle" font-size="24" font-weight="700" fill="var(--ink)">${v==null?'–':txt}</text></svg><span>${label}</span></div>`}
+function tempOvulation(){const D=BD().days;const s=pStats();if(!s.st.length)return null;const start=s.st[s.st.length-1];const ds=[...Array(days(start,today())+1)].map((_,i)=>addDays(start,i)).filter(d=>D[d]&&D[d].temp!=null&&D[d].temp!=='');
+  for(let i=6;i<ds.length-2;i++){const prev=Math.max(...ds.slice(i-6,i).map(d=>+D[d].temp));if([0,1,2].every(j=>+D[ds[i+j]].temp>=prev+0.2))return {ov:addDays(ds[i],-1),cover:prev}}return null}
+function phaseInsights(){const D=BD().days,keys=Object.keys(D);const g={f:{},l:{}};keys.forEach(d=>{const p=bPhase(d);if(!p||p==='late')return;const k=isLut(p)?'l':'f';['hrv','rhr','temp'].forEach(m=>{if(D[d][m]!=null&&D[d][m]!==''){(g[k][m]=g[k][m]||[]).push(+D[d][m])}})});
+  const av=a=>a&&a.length>=5?a.reduce((x,y)=>x+y,0)/a.length:null;const out=[];
+  const h1=av(g.f.hrv),h2=av(g.l.hrv);if(h1&&h2)out.push(`Στην ωχρινική φάση η HRV σου είναι κατά μέσο όρο <b>${Math.round((h2-h1)/h1*100)}%</b> σε σχέση με την ωοθυλακική (${Math.round(h2)} έναντι ${Math.round(h1)} ms).`);
+  const r1=av(g.f.rhr),r2=av(g.l.rhr);if(r1&&r2)out.push(`Οι παλμοί ηρεμίας σου στην ωχρινική φάση είναι <b>${(r2-r1>0?'+':'')+(r2-r1).toFixed(1)} bpm</b> σε σχέση με την ωοθυλακική.`);
+  const t1=av(g.f.temp),t2=av(g.l.temp);if(t1&&t2)out.push(`Η θερμοκρασία σου είναι <b>${(t2-t1>0?'+':'')+(t2-t1).toFixed(2)}°C</b> στην ωχρινική φάση, ${t2-t1>=0.2?'όπως αναμένεται μετά την ωορρηξία':'(συνήθως ανεβαίνει 0,2 έως 0,5°C μετά την ωορρηξία)'}.`);
+  return out}
+function trendSVG(metric){
+  const D=BD().days,t=today(),N=30,dates=[...Array(N)].map((_,i)=>addDays(t,i-N+1));
+  const val=d=>metric==='rec'?recoveryOf(d):metric==='strain'?strainOf(d):metric==='sleep'?(D[d]&&D[d].sleepH?+D[d].sleepH:null):(D[d]&&D[d][metric]!=null&&D[d][metric]!==''?+D[d][metric]:null);
+  const vs=dates.map(val);const ok=vs.filter(v=>v!=null);if(ok.length<2)return '<p class="muted small">Χρειάζονται τουλάχιστον 2 ημέρες δεδομένων.</p>';
+  let mn=Math.min(...ok),mx=Math.max(...ok);if(mn===mx){mn-=1;mx+=1}const pad2=(mx-mn)*.15;mn-=pad2;mx+=pad2;
+  const W=600,H=190,L=30,R=10,T=12,B=26,x=i=>L+(W-L-R)*i/(N-1),y=v=>T+(H-T-B)*(1-(v-mn)/(mx-mn));
+  const bands=dates.map((d,i)=>{const p=bPhase(d);return p?`<rect x="${x(i)-(W-L-R)/(N-1)/2}" y="${T}" width="${(W-L-R)/(N-1)}" height="${H-T-B}" fill="${P_COL[p]}" opacity=".18"/>`:''}).join('');
+  let path='';vs.forEach((v,i)=>{if(v!=null)path+=(path&&vs[i-1]!=null?'L':'M')+x(i).toFixed(1)+','+y(v).toFixed(1)});
+  const col={rec:'#2e9d6a',strain:'#3b7dd8',sleep:'#8a78c2',hrv:'#2f7f7a',rhr:'#e9775a',rr:'#c99a2e',spo2:'#3b7dd8',temp:'#d9534f'}[metric]||'#2f7f7a';
+  const bl=['hrv','rhr','rr','temp'].includes(metric)?bBase(metric,addDays(t,1)):null;
+  return `<svg viewBox="0 0 ${W} ${H}" class="chart">${bands}${bl?`<line x1="${L}" x2="${W-R}" y1="${y(bl.m)}" y2="${y(bl.m)}" stroke="var(--muted)" stroke-dasharray="4 4"/>`:''}<path d="${path}" fill="none" stroke="${col}" stroke-width="2.5" stroke-linejoin="round"/>${vs.map((v,i)=>v==null?'':`<circle cx="${x(i)}" cy="${y(v)}" r="${dates[i]===bodySel?5:3}" fill="${metric==='rec'?recCol(v):col}"/>`).join('')}
+   <text x="4" y="${T+8}" font-size="10" fill="var(--muted)">${Math.round(mx*10)/10}</text><text x="4" y="${H-B}" font-size="10" fill="var(--muted)">${Math.round(mn*10)/10}</text>${[0,10,20,29].map(i=>`<text x="${x(i)}" y="${H-8}" font-size="10" text-anchor="middle" fill="var(--muted)">${parse(dates[i]).getDate()}/${parse(dates[i]).getMonth()+1}</text>`).join('')}</svg>
+   ${pStats().st.length?`<div class="row small" style="gap:10px;justify-content:center"><span><i class="lg" style="background:${P_COL.period};opacity:.5"></i>περίοδος</span><span><i class="lg" style="background:${P_COL.fert};opacity:.5"></i>γόνιμες</span><span><i class="lg" style="background:${P_COL.lut};opacity:.6"></i>ωχρινική</span>${bl?'<span>- - - ο μέσος όρος σου</span>':''}</div>`:''}`;
+}
+V.body=()=>{
+  if(route().split('/')[1]==='import')return V.body_import();
+  const B=BD(),sel=bodySel||today(),d=B.days[sel]||{},rec=recoveryOf(sel),st=strainOf(sel),sp=sleepPerf(sel),need=sleepNeed(sel),tgt=strainTarget(sel,rec),bp=bPhase(sel),td=tempDelta(sel),tov=tempOvulation(),ins=phaseInsights();
+  const has=Object.keys(B.days).length;
+  const vit=k=>{const v=d[k];const b=bBase(k,sel);const [lab,u,dir]=BM[k];if(v==null||v===''){return `<div class="vit"><span class="small muted">${lab}</span><b>–</b></div>`}
+    let delta='',cls='';if(b){const z=(+v-b.m)/b.sd;const good=dir===0?Math.abs(z)<1.5:dir*z>-1;cls=Math.abs(z)<1?'':good?'up':'down';delta=k==='temp'?((td>0?'+':'')+td+'°C'):((+v-b.m>0?'▲':'▼')+' '+Math.abs(Math.round((+v-b.m)*10)/10))}
+    return `<div class="vit ${cls}"><span class="small muted">${lab}</span><b>${k==='temp'?(+v).toFixed(2):Math.round(+v*10)/10}<small> ${u}</small></b><span class="small">${b?delta+' <span class="muted">(μ.ό. '+(Math.round(b.m*10)/10)+')</span>':'<span class="muted">συλλογή βάσης</span>'}</span></div>`};
+  return `<div class="row between"><h1 style="margin:0">Σώμα & Ανάκαμψη</h1><div class="row"><button class="btn ghost" data-a="bday" data-v="-1">‹</button><b>${sel===today()?'Σήμερα':fmt(sel)}</b><button class="btn ghost" data-a="bday" data-v="1" ${sel>=today()?'disabled':''}>›</button></div></div>
+  ${!has?`<div class="card coachHero" style="margin-top:14px"><span class="pill">⌚ Τύπου WHOOP, για τη γονιμότητα</span><h2 style="margin-top:10px">Ο ύπνος, οι παλμοί και η HRV σου, δίπλα στον κύκλο σου</h2><p>Εισάγεις δεδομένα από το Apple Watch μέσω της εφαρμογής Υγεία ή τα γράφεις με το χέρι. Η εφαρμογή υπολογίζει ανάκαμψη, φόρτο και απόδοση ύπνου, και τα συνδέει με τη φάση του κύκλου, τη θεραπεία και την εγκυμοσύνη.</p><div class="row"><a class="btn alt" href="#body/import">⌚ Εισαγωγή από Apple Health</a><button class="btn alt" data-a="bdemo">Δοκιμαστικά δεδομένα</button></div></div>`:''}
+  <div class="card" style="margin-top:14px"><div class="rings">${ring(rec,100,recCol(rec),'Ανάκαμψη',rec+'%')}${ring(st,21,'#3b7dd8','Φόρτος (Strain)',st)}${ring(sp,100,'#8a78c2','Ύπνος',sp+'%')}</div>
+   ${bp?`<p class="small" style="text-align:center;margin:4px 0 0">Φάση κύκλου: <span class="pill" style="background:${P_COL[bp]}33;color:var(--ink)">${P_NAME[bp]}</span></p>`:''}
+   <div class="card soft" style="margin-top:12px;padding:12px"><b>${rec==null?'Συμπλήρωσε HRV ή παλμούς ηρεμίας για να υπολογιστεί η ανάκαμψη.':rec>=67?'🟢 Το σώμα σου είναι έτοιμο.':rec>=34?'🟡 Μέτρια ανάκαμψη.':'🔴 Το σώμα σου χρειάζεται ξεκούραση.'}</b><p class="small" style="margin:4px 0">Προτεινόμενος φόρτος σήμερα: <b>${tgt.t[0]} έως ${tgt.t[1]}</b> (κλίμακα 0 έως 21) · Ανάγκη ύπνου απόψε: <b>${need} ώρες</b></p>${tgt.notes.map(n=>`<p class="small" style="margin:4px 0">• ${n}</p>`).join('')}</div></div>
+  <div class="vits">${['hrv','rhr','rr','spo2','temp'].map(vit).join('')}</div>
+  <div class="grid g2" style="margin-top:16px">
+   <div class="card"><h2>😴 Ύπνος</h2>${d.sleepH?`<p><b>${d.sleepH} ώρες</b> από ${need} που χρειαζόσουν${d.bed?` · ${esc(d.bed)} έως ${esc(d.wake||'')}`:''}</p>${(d.deep||d.rem||d.light)?(()=>{const tot=(+d.deep||0)+(+d.rem||0)+(+d.light||0)+(+d.awake||0)||1;return `<div class="stages">${[['awake','Ξύπνια','#e7b85a'],['light','Ελαφρύς','#9fc3e8'],['deep','Βαθύς','#3b7dd8'],['rem','REM','#8a78c2']].map(([k,l,c])=>`<span style="flex:${(+d[k]||0)/tot};background:${c}" title="${l}"></span>`).join('')}</div><div class="row small" style="gap:10px">${[['deep','Βαθύς'],['rem','REM'],['light','Ελαφρύς'],['awake','Ξύπνια']].map(([k,l])=>`<span>${l}: <b>${Math.round(+d[k]||0)}′</b></span>`).join('')}</div>`})():''}`:'<p class="muted small">Δεν υπάρχει καταγραφή ύπνου.</p>'}
+    <p class="small muted" style="margin-top:8px">Η ανάγκη ύπνου αυξάνεται με τον φόρτο της προηγούμενης ημέρας, το «χρέος» ύπνου, την ωχρινική φάση και την εγκυμοσύνη.</p></div>
+   <div class="card"><h2>🏃‍♀️ Φόρτος (Strain)</h2><p>${st!=null?`<b>${st}</b> / 21`:'–'} · Βήματα: <b>${d.steps||0}</b> · Άσκηση: <b>${d.exMin||0}′</b>${d.kcal?` · ${d.kcal} kcal`:''}</p>
+    ${(d.workouts||[]).map((w,i)=>`<div class="item small"><span>${esc(w.type)} · ${w.min}′ · ${(INT.find(x=>String(x[0])===String(w.int))||['',''])[1]}</span><button class="btn ghost" data-a="bwdel" data-i="${i}">✕</button></div>`).join('')}
+    <form data-form="bwork" class="fields two" style="margin-top:8px"><div><label>Δραστηριότητα</label><input name="type" placeholder="π.χ. Περπάτημα" required></div><div class="fields two"><div><label>Λεπτά</label><input name="min" type="number" min="1" required></div><div><label>Ένταση</label><select name="int">${INT.slice(1).map(([v,l])=>`<option value="${v}" ${v===3?'selected':''}>${l}</option>`).join('')}</select></div></div><div><button class="btn alt sm">+ Άσκηση</button></div></form></div>
+  </div>
+  <div class="card" style="margin-top:16px"><div class="row between"><h2 style="margin:0">Τάσεις 30 ημερών</h2></div><div class="chips" style="margin:10px 0">${[['rec','Ανάκαμψη'],['strain','Φόρτος'],['sleep','Ύπνος'],['hrv','HRV'],['rhr','Παλμοί'],['temp','Θερμοκρασία'],['rr','Αναπνοές'],['spo2','SpO2']].map(([k,l])=>`<button class="chip ${bodyMetric===k?'on':''}" data-a="bmetric" data-v="${k}">${l}</button>`).join('')}</div>${trendSVG(bodyMetric)}</div>
+  ${ins.length||tov?`<div class="card soft" style="margin-top:16px"><h2>🔎 Τι μαθαίνουμε για το σώμα σου</h2>${tov?`<p>🌡️ Η θερμοκρασία σου ανέβηκε 3 συνεχόμενες ημέρες πάνω από τη βασική. <b>Πιθανή ωορρηξία γύρω στις ${fmtL(tov.ov)}</b>. Αυτό επιβεβαιώνει (αναδρομικά) ότι έγινε ωορρηξία σε αυτόν τον κύκλο.</p>`:''}${ins.map(x=>`<p>${x}</p>`).join('')}</div>`:''}
+  <div class="grid g2" style="margin-top:16px">
+   <div class="card"><h2>✍️ Καταγραφή ${sel===today()?'σήμερα':fmt(sel)}</h2><form data-form="bday"><div class="fields two">
+    <div><label>HRV (ms)</label><input name="hrv" inputmode="decimal" value="${d.hrv??''}"></div><div><label>Παλμοί ηρεμίας (bpm)</label><input name="rhr" inputmode="decimal" value="${d.rhr??''}"></div>
+    <div><label>Αναπνοές / λεπτό</label><input name="rr" inputmode="decimal" value="${d.rr??''}"></div><div><label>SpO2 (%)</label><input name="spo2" inputmode="decimal" value="${d.spo2??''}"></div>
+    <div><label>Θερμοκρασία (°C)</label><input name="temp" inputmode="decimal" value="${d.temp??''}" placeholder="καρπού ή πρωινή"></div><div><label>Ύπνος (ώρες)</label><input name="sleepH" inputmode="decimal" value="${d.sleepH??''}"></div>
+    <div><label>Βαθύς ύπνος (λεπτά)</label><input name="deep" inputmode="numeric" value="${d.deep??''}"></div><div><label>REM (λεπτά)</label><input name="rem" inputmode="numeric" value="${d.rem??''}"></div>
+    <div><label>Βήματα</label><input name="steps" inputmode="numeric" value="${d.steps??''}"></div><div><label>Λεπτά άσκησης</label><input name="exMin" inputmode="numeric" value="${d.exMin??''}"></div>
+    <div><label>Πίεση (συστ./διαστ.)</label><div class="row" style="flex-wrap:nowrap"><input name="sys" inputmode="numeric" value="${d.sys??''}" placeholder="120"><input name="dia" inputmode="numeric" value="${d.dia??''}" placeholder="80"></div></div><div><label>VO2max</label><input name="vo2" inputmode="decimal" value="${d.vo2??''}"></div>
+   </div><button class="btn" style="margin-top:12px">Αποθήκευση</button></form></div>
+   <div class="grid"><div class="card"><h2>⌚ Apple Watch</h2><p class="small">Σήμερα: <b>εισαγωγή από την εφαρμογή Υγεία</b> του iPhone (μία φορά την εβδομάδα ή όποτε θέλεις). Στην έκδοση για App Store: <b>αυτόματος συγχρονισμός</b> με το Apple Watch.</p><a class="btn alt sm" href="#body/import">Εισαγωγή από Apple Health</a></div>
+    <div class="card soft"><h3>Ρυθμίσεις</h3><form data-form="bcfg" class="row"><label style="margin:0">Βασική ανάγκη ύπνου</label><input name="need" type="number" step="0.25" min="5" max="11" value="${B.cfg.need}" style="width:90px"><button class="btn alt sm">OK</button></form>${has?`<div class="row" style="margin-top:10px">${Object.values(B.days).some(x=>x.demo)?'<button class="btn ghost" data-a="bdemodel">Διαγραφή δοκιμαστικών δεδομένων</button>':''}</div>`:''}
+     <p class="small muted" style="margin-top:8px">Οι βαθμολογίες (ανάκαμψη, φόρτος, ύπνος) υπολογίζονται από την εφαρμογή με βάση τον δικό σου μέσο όρο 30 ημερών. Δεν είναι οι αλγόριθμοι της WHOOP ή της Apple και δεν αποτελούν ιατρική μέτρηση.</p></div></div>
+  </div>`;
+};
+V.body_import=()=>`<a href="#body" class="btn ghost">← Σώμα & Ανάκαμψη</a><h1>Εισαγωγή από Apple Health</h1>
+ <div class="grid g2"><div class="card"><h2>Βήματα στο iPhone</h2><ol class="small"><li>Άνοιξε την εφαρμογή <b>Υγεία</b> → πάτα τη φωτογραφία σου πάνω δεξιά.</li><li><b>Εξαγωγή όλων των δεδομένων υγείας</b> → Εξαγωγή. Περίμενε λίγα λεπτά.</li><li>Αποθήκευσε το αρχείο <b>export.zip</b> στα <b>Αρχεία</b>.</li><li>Στα Αρχεία πάτα το export.zip για να ανοίξει ο φάκελος <b>apple_health_export</b>.</li><li>Εδώ, πάτα «Επιλογή αρχείου» και διάλεξε το <b>export.xml</b> από τον φάκελο.</li></ol>
+  <input type="file" accept=".xml,text/xml,application/xml" data-a="ahimport"><div id="ahprog" class="small" style="margin-top:10px"></div></div>
+  <div class="card soft"><h2>Τι εισάγεται (τελευταίοι 120 ημέρες)</h2><ul class="small"><li>HRV, παλμοί ηρεμίας, αναπνοές, SpO2</li><li>Θερμοκρασία καρπού στον ύπνο (Apple Watch Series 8 και νεότερα) ή βασική θερμοκρασία</li><li>Ύπνος με στάδια (βαθύς, REM, ελαφρύς, ξύπνια)</li><li>Βήματα, ενεργές θερμίδες, λεπτά άσκησης, προπονήσεις, VO2max</li><li>Πίεση</li><li>Ροή περιόδου, τεστ ωορρηξίας, τραχηλική βλέννη (στην καρτέλα Περίοδος)</li></ul><p class="small muted">Η επεξεργασία γίνεται μόνο μέσα στο κινητό σου. Το αρχείο δεν ανεβαίνει πουθενά. Το Apple Watch μετρά HRV ως SDNN: οι τιμές είναι συγκρίσιμες μόνο με τον δικό σου μέσο όρο, όχι με το RMSSD της WHOOP.</p></div></div>`;
+
+/* ---------- Apple Health export.xml (ροή, χωρίς φόρτωση όλου του αρχείου) ---------- */
+const AH={HKQuantityTypeIdentifierHeartRateVariabilitySDNN:['hrv','avg'],HKQuantityTypeIdentifierRestingHeartRate:['rhr','last'],HKQuantityTypeIdentifierRespiratoryRate:['rr','avg'],HKQuantityTypeIdentifierOxygenSaturation:['spo2','avgpct'],HKQuantityTypeIdentifierAppleSleepingWristTemperature:['temp','last'],HKQuantityTypeIdentifierBasalBodyTemperature:['temp','last'],HKQuantityTypeIdentifierStepCount:['steps','sum'],HKQuantityTypeIdentifierActiveEnergyBurned:['kcal','sum'],HKQuantityTypeIdentifierAppleExerciseTime:['exMin','sum'],HKQuantityTypeIdentifierVO2Max:['vo2','last'],HKQuantityTypeIdentifierBloodPressureSystolic:['sys','last'],HKQuantityTypeIdentifierBloodPressureDiastolic:['dia','last']};
+const AHSLEEP={HKCategoryValueSleepAnalysisAsleepDeep:'deep',HKCategoryValueSleepAnalysisAsleepREM:'rem',HKCategoryValueSleepAnalysisAsleepCore:'light',HKCategoryValueSleepAnalysisAsleepUnspecified:'light',HKCategoryValueSleepAnalysisAsleep:'light',HKCategoryValueSleepAnalysisAwake:'awake'};
+const AHFLOW={HKCategoryValueMenstrualFlowUnspecified:2,HKCategoryValueMenstrualFlowLight:2,HKCategoryValueMenstrualFlowMedium:3,HKCategoryValueMenstrualFlowHeavy:4,HKCategoryValueMenstrualFlowNone:0};
+const AHW={Running:'Τρέξιμο',Walking:'Περπάτημα',Cycling:'Ποδήλατο',Swimming:'Κολύμπι',Yoga:'Yoga',TraditionalStrengthTraining:'Βάρη',FunctionalStrengthTraining:'Λειτουργική προπόνηση',HighIntensityIntervalTraining:'HIIT',CrossTraining:'Cross training',Pilates:'Pilates',Elliptical:'Ελλειπτικό',Dance:'Χορός',Hiking:'Πεζοπορία',MindAndBody:'Νους και σώμα'};
+const ahD=x=>{const m=x.match(/^(\d{4}-\d\d-\d\d) (\d\d:\d\d:\d\d) ?([+-]\d\d)(\d\d)$/);return m?new Date(m[1]+'T'+m[2]+m[3]+':'+m[4]):new Date(x)};
+const attr=(s,n)=>{const m=s.match(new RegExp('(?:^|\\s)'+n+'="([^"]*)"'));return m?m[1]:null};
+async function importAppleHealth(file){
+  const prog=$('#ahprog');const cutoff=addDays(today(),-120);const acc={};const sleep={};const flows={};const lhs={};const mucus={};const wk={};let n=0;
+  const put=(date,k,v,mode)=>{const a=(acc[date]=acc[date]||{});const o=(a[k]=a[k]||{s:0,c:0,last:null});o.s+=v;o.c++;o.last=v;o.mode=mode};
+  const handle=rec=>{
+    const type=attr(rec,'type'),sd=attr(rec,'startDate');if(!sd)return;const date=sd.slice(0,10);
+    if(rec.startsWith('Workout')){const ed=(attr(rec,'endDate')||sd).slice(0,10);if(ed<cutoff)return;const t=(attr(rec,'workoutActivityType')||'').replace('HKWorkoutActivityType','');let min=+attr(rec,'duration')||0;if(attr(rec,'durationUnit')==='s')min/=60;if(attr(rec,'durationUnit')==='hr')min*=60;(wk[ed]=wk[ed]||[]).push({type:AHW[t]||t,min:Math.round(min),int:/HighIntensity|Running|Cross/.test(t)?4:/Walking|Yoga|MindAndBody|Pilates/.test(t)?2:3});return}
+    if(date<cutoff&&type!=='HKCategoryTypeIdentifierSleepAnalysis')return;
+    if(AH[type]){let v=parseFloat(attr(rec,'value'));if(isNaN(v))return;const [k,mode]=AH[type];if(mode==='avgpct'&&v<=1.5)v*=100;if(k==='temp'&&attr(rec,'unit')==='degF')v=(v-32)*5/9;put(date,k,v,mode);n++;return}
+    if(type==='HKCategoryTypeIdentifierSleepAnalysis'){const ed=attr(rec,'endDate');if(!ed)return;const wd=ed.slice(0,10);if(wd<cutoff)return;const st=AHSLEEP[attr(rec,'value')];if(!st)return;const mins=(ahD(ed)-ahD(sd))/60000;if(!(mins>0&&mins<1000))return;const o=(sleep[wd]=sleep[wd]||{deep:0,rem:0,light:0,awake:0,b:sd.slice(11,16),w:ed.slice(11,16),bs:sd,we:ed});o[st]+=mins;if(sd<o.bs){o.bs=sd;o.b=sd.slice(11,16)}if(ed>o.we){o.we=ed;o.w=ed.slice(11,16)}n++;return}
+    if(type==='HKCategoryTypeIdentifierMenstrualFlow'){flows[date]=AHFLOW[attr(rec,'value')]??2;n++;return}
+    if(type==='HKCategoryTypeIdentifierOvulationTestResult'){const v=attr(rec,'value')||'';lhs[date]=/Positive|LuteinizingHormoneSurge|EstrogenSurge/.test(v)?'pos':'neg';return}
+    if(type==='HKCategoryTypeIdentifierCervicalMucusQuality'){const v=attr(rec,'value')||'';mucus[date]=/EggWhite/.test(v)?'egg':/Creamy/.test(v)?'creamy':/Sticky/.test(v)?'sticky':/Dry/.test(v)?'dry':'';return}
+  };
+  try{
+    const reader=file.stream().pipeThrough(new TextDecoderStream()).getReader();let buf='',read=0;
+    while(true){const {done,value}=await reader.read();if(done)break;read+=value.length;buf+=value;
+      let i;while(true){const r1=buf.indexOf('<Record '),w1=buf.indexOf('<Workout ');i=r1<0?w1:w1<0?r1:Math.min(r1,w1);if(i<0)break;const j=buf.indexOf('>',i);if(j<0)break;const tag=buf.slice(i+1,j);buf=buf.slice(j+1);handle(tag.startsWith('Record')?tag.slice(7):tag)}
+      if(buf.length>2e6)buf=buf.slice(-1e5);
+      prog.textContent='Ανάγνωση… '+Math.min(99,Math.round(read/file.size*100))+'% · '+n+' μετρήσεις';}
+  }catch(e){prog.textContent='Δεν ήταν δυνατή η ανάγνωση του αρχείου. Βεβαιώσου ότι επέλεξες το export.xml.';return}
+  const B=BD();let nd=0;
+  Object.entries(acc).forEach(([d,a])=>{const o=B.days[d]=B.days[d]||{};Object.entries(a).forEach(([k,x])=>{o[k]=x.mode==='sum'?Math.round(x.s):x.mode==='last'?Math.round(x.last*100)/100:Math.round(x.s/x.c*10)/10});o.src='apple';nd++});
+  Object.entries(sleep).forEach(([d,s])=>{const o=B.days[d]=B.days[d]||{};const asleep=s.deep+s.rem+s.light;if(asleep<60)return;o.sleepH=Math.round(asleep/60*10)/10;o.deep=Math.round(s.deep);o.rem=Math.round(s.rem);o.light=Math.round(s.light);o.awake=Math.round(s.awake);o.bed=s.b;o.wake=s.w;o.src='apple'});
+  Object.entries(wk).forEach(([d,w])=>{const o=B.days[d]=B.days[d]||{};o.workouts=w;o.src='apple'});
+  const P=PD();Object.entries(flows).forEach(([d,f])=>{P.days[d]=Object.assign(P.days[d]||{},{flow:f});if(f>0&&!Object.keys(flows).some(x=>x<d&&x>=addDays(d,-3)&&flows[x]>0)&&!P.starts.some(s=>Math.abs(days(s,d))<10)){P.starts.push(d)}});P.starts.sort();
+  Object.entries(lhs).forEach(([d,v])=>{P.days[d]=Object.assign(P.days[d]||{},{lh:v})});Object.entries(mucus).forEach(([d,v])=>{if(v)P.days[d]=Object.assign(P.days[d]||{},{mucus:v})});
+  Object.entries(B.days).forEach(([d,o])=>{if(o.temp!=null&&P.days[d]&&!P.days[d].temp)P.days[d].temp=o.temp});
+  save();prog.innerHTML='✅ Ολοκληρώθηκε: <b>'+nd+'</b> ημέρες, '+n+' μετρήσεις'+(Object.keys(flows).length?', '+Object.keys(flows).length+' ημέρες περιόδου':'')+'. <a href="#body">Δες τα αποτελέσματα →</a>';
+}
+/* Μελλοντικά: εγγενής σύνδεση HealthKit μέσω Capacitor (δες HEALTHKIT.md) */
+async function healthKitSync(){const H=window.Capacitor&&window.Capacitor.Plugins&&(window.Capacitor.Plugins.Health||window.Capacitor.Plugins.HealthKit);if(!H){location.hash='body/import';return false}return true}
+function bodyDemo(){
+  const B=BD(),t=today(),s=pStats();const start=s.st.length?s.st[s.st.length-1]:addDays(t,-18);let L=s.L||28,ov=L-14;
+  for(let i=44;i>=0;i--){const d=addDays(t,-i);if(B.days[d]&&!B.days[d].demo)continue;const cd=((days(start,d)%L)+L)%L+1;const lut=cd>ov;const r=()=>Math.random()-.5;
+    B.days[d]={demo:true,hrv:Math.round(58-(lut?7:0)+r()*14),rhr:Math.round(57+(lut?3:0)+r()*4),rr:Math.round((14.2+(lut?.4:0)+r()*.8)*10)/10,spo2:Math.round(96.5+r()*2),temp:Math.round((34.9+(lut?.35:0)+r()*.2)*100)/100,sleepH:Math.round((7.1+r()*1.8)*10)/10,deep:Math.round(70+r()*40),rem:Math.round(95+r()*40),light:Math.round(230+r()*60),awake:Math.round(25+r()*20),bed:'23:'+String(10+Math.floor(Math.random()*40)),wake:'07:'+String(10+Math.floor(Math.random()*40)).padStart(2,'0'),steps:Math.round(7000+r()*6000),exMin:Math.round(30+r()*40),workouts:Math.random()<.5?[{type:['Περπάτημα','Yoga','Pilates','Τρέξιμο'][Math.floor(Math.random()*4)],min:Math.round(30+Math.random()*30),int:2+Math.floor(Math.random()*3)}]:[]}}
+  save();toast('Προστέθηκαν δοκιμαστικά δεδομένα 45 ημερών');render();
+}
+function bodyMini(){const r=recoveryOf(today());if(r==null&&!Object.keys(BD().days).length)return '';const st=strainOf(today()),sp=sleepPerf(today());return `<a class="card bodymini" href="#body"><div class="rings sm">${ring(r,100,recCol(r),'Ανάκαμψη',r+'%')}${ring(st,21,'#3b7dd8','Φόρτος',st)}${ring(sp,100,'#8a78c2','Ύπνος',sp+'%')}</div></a>`}
 
 /* ---------- Router ---------- */
 function render(){const r=route().split('/')[0];const fn=V[r]||V.today;if(r!=='coach')clearTimeout(breathTimer);$('#app').innerHTML=fn();nav();if(r==='preg'||r==='baby')startTickers();else clearInterval(contrTick);if(r==='files')hydrateThumbs()}
