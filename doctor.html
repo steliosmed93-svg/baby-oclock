@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Baby O’Clock · Πύλη γιατρών</title>
+<meta name="robots" content="noindex">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link href="https://fonts.googleapis.com/css2?family=Commissioner:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f4f6f8;--s:#fff;--ink:#22252b;--mu:#69707a;--line:#e2e6ea;--teal:#2f7f7a;--teal2:#dcefed;--coral:#e9775a;--coral2:#fde7df;--red:#c8433b;--lil:#8a78c2}
+*{box-sizing:border-box}body{margin:0;font-family:Commissioner,system-ui,sans-serif;background:var(--bg);color:var(--ink);line-height:1.5}
+header{background:#1f3b3a;color:#fff;padding:12px 20px;display:flex;align-items:center;gap:12px}header img{width:32px}header b{font-size:1.05rem}header .sp{margin-left:auto;display:flex;gap:10px;align-items:center;font-size:.9rem}
+main{max-width:1200px;margin:0 auto;padding:20px;display:grid;gap:18px;grid-template-columns:300px 1fr}
+@media(max-width:860px){main{grid-template-columns:1fr}}
+.card{background:var(--s);border:1px solid var(--line);border-radius:16px;padding:16px}
+h1,h2,h3{margin:0 0 .5em;line-height:1.25}h2{font-size:1.15rem}h3{font-size:1rem}
+.btn{border:0;background:var(--teal);color:#fff;font:inherit;font-weight:600;padding:9px 14px;border-radius:10px;cursor:pointer}.btn.alt{background:#eef1f3;color:var(--ink)}.btn.sm{padding:6px 10px;font-size:.88rem}.btn.coral{background:var(--coral)}
+input,select,textarea{width:100%;font:inherit;padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:#fff}
+label{display:block;font-size:.82rem;font-weight:600;margin:8px 0 3px;color:#4a505a}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.between{justify-content:space-between}
+.muted{color:var(--mu)}.small{font-size:.86rem}
+.pt{display:block;width:100%;text-align:left;border:1px solid var(--line);background:#fff;border-radius:12px;padding:10px 12px;margin:6px 0;cursor:pointer;font:inherit}.pt.on{border-color:var(--teal);background:var(--teal2)}
+table{width:100%;border-collapse:collapse;font-size:.88rem}th,td{text-align:left;border-bottom:1px solid var(--line);padding:6px;vertical-align:top}th{background:#f7f8fa}
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}.tabs button{border:1px solid var(--line);background:#fff;border-radius:999px;padding:7px 12px;font:inherit;cursor:pointer}.tabs button.on{background:var(--teal);color:#fff;border-color:var(--teal)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}@media(max-width:700px){.grid2{grid-template-columns:1fr}}
+.pill{display:inline-block;padding:2px 8px;border-radius:999px;font-size:.78rem;font-weight:600;background:var(--teal2);color:var(--teal)}.pill.red{background:#fbe3e1;color:var(--red)}
+.medrow{display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr auto;gap:6px;margin:6px 0}@media(max-width:700px){.medrow{grid-template-columns:1fr 1fr}}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#22252b;color:#fff;padding:10px 16px;border-radius:10px;opacity:0;transition:.25s}.toast.show{opacity:1}
+.empty{text-align:center;padding:40px 10px}
+.gbtn{background:#fff;color:#3c4043;border:1px solid #dadce0}
+</style>
+</head>
+<body>
+<header><img src="icon.svg" alt=""><b>Baby O’Clock · Πύλη γιατρών</b><div class="sp" id="who"></div></header>
+<div id="root"></div>
+<div class="toast" id="toast"></div>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script>
+if(typeof firebase==='undefined'){document.getElementById('root').innerHTML='<p style="padding:40px;text-align:center">Χρειάζεται σύνδεση στο ίντερνετ.</p>';throw new Error('offline')}
+firebase.initializeApp({apiKey:"AIzaSyCmuQqxHv1E08iB4q-8VEbJUrOTRgmvZyk",authDomain:"mazi-ivf.firebaseapp.com",projectId:"mazi-ivf",storageBucket:"mazi-ivf.firebasestorage.app",messagingSenderId:"75016649970",appId:"1:75016649970:web:28b404e472eb6f0190a46b"});
+const DB=firebase.firestore(),AU=firebase.auth();let ME=null,PATS=[],SEL=null,SUM=null,TAB='summary',SENT=[];
+const $=s=>document.querySelector(s),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const pad=n=>String(n).padStart(2,'0'),ymd=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()),today=()=>ymd(new Date());
+const fmt=s=>{if(!s)return '';const [y,m,d]=s.slice(0,10).split('-');return d+'/'+m+'/'+y};
+function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2400)}
+const qcode=new URLSearchParams(location.search).get('code')||'';
+AU.onAuthStateChanged(async u=>{ME=u;if(u){await loadPats();}draw()});
+async function loadPats(){const s=await DB.collection('doctors').doc(ME.uid).collection('patients').orderBy('since','desc').get().catch(()=>null);PATS=s?s.docs.map(d=>({id:d.id,...d.data()})):[]}
+async function signin(){const p=new firebase.auth.GoogleAuthProvider();p.setCustomParameters({prompt:'select_account'});try{await AU.signInWithPopup(p)}catch(e){if(e.code==='auth/popup-blocked')AU.signInWithRedirect(p)}}
+async function link(code){
+  code=(code||'').trim().toUpperCase();if(code.length!==6){toast('Ο κωδικός έχει 6 χαρακτήρες');return}
+  try{const l=await DB.collection('links').doc(code).get();if(!l.exists){toast('Ο κωδικός δεν βρέθηκε');return}const d=l.data();if(d.exp<Date.now()){toast('Ο κωδικός έχει λήξει. Ζήτησε νέο από την ασθενή.');return}
+    await DB.collection('care').doc(d.patientUid).collection('doctors').doc(ME.uid).set({code,name:ME.displayName||'',email:ME.email||'',created:Date.now()});
+    await DB.collection('doctors').doc(ME.uid).collection('patients').doc(d.patientUid).set({name:d.name||'Ασθενής',since:Date.now()});
+    toast('Η ασθενής συνδέθηκε');await loadPats();select(d.patientUid)}catch(e){console.warn(e);toast('Η σύνδεση απέτυχε')}
+}
+async function select(pid){SEL=pid;SUM=null;SENT=[];draw();
+  try{const s=await DB.collection('care').doc(pid).get();SUM=s.exists?s.data():{};}catch(e){SUM={denied:true}}
+  try{const q=await DB.collection('care').doc(pid).collection('inbox').orderBy('created','desc').limit(30).get();SENT=q.docs.map(d=>({id:d.id,...d.data()}))}catch(e){}
+  draw()}
+async function send(item){try{await DB.collection('care').doc(SEL).collection('inbox').add({...item,from:ME.uid,fromName:ME.displayName||'Ο γιατρός σας',created:Date.now(),read:false});toast('Στάλθηκε ✓');select(SEL)}catch(e){toast('Δεν στάλθηκε: '+(e.code||''))}}
+function summaryHTML(){
+  if(!SUM)return '<p class="muted">Φόρτωση…</p>';if(SUM.denied)return '<p class="muted">Δεν υπάρχει πρόσβαση. Η ασθενής μπορεί να αφαίρεσε τη σύνδεση.</p>';
+  if(!SUM.updatedMs)return '<p class="muted">Η ασθενής δεν έχει ενεργοποιήσει την κοινοποίηση των καταγραφών της. Μπορείς όμως να της στέλνεις πρόγραμμα και αποτελέσματα.</p>';
+  const c=SUM.cycle||{},logs=SUM.logs||{},flags=Object.entries(logs).filter(([d,l])=>(l.flags||[]).length).sort().reverse();
+  const P={sevpain:'Έντονος κοιλιακός πόνος',sevbloat:'Φούσκωμα που αυξάνεται',breath:'Δύσπνοια',urine:'Λιγότερα ούρα',vomit:'Έμετοι',fever:'Πυρετός',bleed:'Έντονη αιμορραγία',leg:'Πόνος γάμπας',faint:'Ζάλη/λιποθυμία'};
+  return `<p class="small muted">Τελευταία ενημέρωση: ${new Date(SUM.updatedMs).toLocaleString('el-GR')}${SUM.phone?' · Τηλ.: <a href="tel:'+esc(SUM.phone)+'">'+esc(SUM.phone)+'</a>':''}${SUM.email?' · '+esc(SUM.email):''}</p>
+  ${flags.length?`<div class="card" style="background:#fbe3e1;border-color:#f1bcb7"><b>⚠️ Σημεία κινδύνου που κατέγραψε:</b><ul class="small">${flags.slice(0,6).map(([d,l])=>`<li>${fmt(d)}: ${l.flags.map(f=>P[f]||f).join(', ')}${l.weight?' · '+esc(l.weight)+' kg':''}</li>`).join('')}</ul></div>`:''}
+  ${SUM.preg?`<div class="card" style="margin-top:10px"><h3>🤰 Εγκυμοσύνη</h3><p class="small">ΤΠ: ${fmt(SUM.preg.lmp)} · Συσπάσεις 24ώρου: <b>${(SUM.preg.contr||[]).length}</b></p>${(SUM.preg.vitals||[]).length?`<table><tr><th>Ημέρα</th><th>Βάρος</th><th>Πίεση</th><th>Σάκχαρο</th></tr>${SUM.preg.vitals.slice(-8).reverse().map(v=>`<tr><td>${fmt(v.date)} ${esc(v.time||'')}</td><td>${esc(v.w||'')}</td><td>${v.sys?esc(v.sys)+'/'+esc(v.dia):''}</td><td>${esc(v.glu||'')}</td></tr>`).join('')}</table>`:''}</div>`:''}
+  <div class="grid2" style="margin-top:10px">
+   <div><h3>Κύκλος θεραπείας</h3><table>${[['Πρωτόκολλο',c.protocol||'-'],['Έναρξη',fmt(c.start)],['Trigger',c.trigger?c.trigger.replace('T',' '):'-'],['Ωοληψία',fmt(c.opu)],['Εμβρυομεταφορά',fmt(c.transfer)],['β-hCG',fmt(c.beta)]].map(r=>`<tr><th>${r[0]}</th><td>${esc(r[1]||'-')}</td></tr>`).join('')}</table>
+    <h3 style="margin-top:14px">Φάρμακα (όπως τα έχει καταγράψει)</h3>${(SUM.meds||[]).length?`<table>${SUM.meds.map(m=>`<tr><td><b>${esc(m.name)}</b> ${esc(m.dose)}</td><td>${esc(m.times)}</td><td class="small">${fmt(m.start)}${m.end?' – '+fmt(m.end):''}</td></tr>`).join('')}</table>`:'<p class="muted small">-</p>'}</div>
+   <div><h3>Υπερηχογραφήματα</h3>${(SUM.scans||[]).length?`<table><tr><th>Ημέρα</th><th>Δεξιά</th><th>Αριστερά</th><th>Ενδ.</th><th>E2</th></tr>${SUM.scans.slice().reverse().map(s=>`<tr><td>${fmt(s.date)}</td><td>${esc(s.right)}</td><td>${esc(s.left)}</td><td>${esc(s.endo)}</td><td>${esc(s.e2)}</td></tr>`).join('')}</table>`:'<p class="muted small">-</p>'}
+    <h3 style="margin-top:14px">Έμμηνος κύκλος</h3><p class="small">${SUM.period&&SUM.period.starts&&SUM.period.starts.length?'Τελευταία περίοδος: <b>'+fmt(SUM.period.starts[SUM.period.starts.length-1])+'</b> · μέσος κύκλος '+SUM.period.avgLen+' ημ. · περίοδος '+SUM.period.avgBleed+' ημ.':'-'}</p>
+    <h3>Συμπτώματα (τελευταίες ημέρες)</h3>${Object.keys(logs).length?`<table>${Object.entries(logs).sort().reverse().slice(0,10).map(([d,l])=>`<tr><td>${fmt(d)}</td><td class="small">${(l.symptoms||[]).length} συμπτ.${(l.flags||[]).length?' · <span class="pill red">'+l.flags.length+' κινδύνου</span>':''}${l.weight?' · '+esc(l.weight)+' kg':''}${l.notes?' · «'+esc(l.notes)+'»':''}</td></tr>`).join('')}</table>`:'<p class="muted small">-</p>'}
+    ${(SUM.files||[]).length?`<p class="small muted" style="margin-top:8px">Η ασθενής έχει αποθηκεύσει ${SUM.files.length} εξετάσεις στην εφαρμογή.</p>`:''}</div>
+  </div>`;
+}
+function sendHTML(){
+  return `<div class="grid2">
+  <div class="card"><h3>💊 Πρόγραμμα φαρμάκων</h3><div id="meds">${medRow()}</div><button class="btn alt sm" onclick="document.getElementById('meds').insertAdjacentHTML('beforeend',medRow())">+ γραμμή</button>
+   <div style="margin-top:10px"><button class="btn" onclick="sendMeds()">Αποστολή</button></div></div>
+  <div class="card"><h3>🔍 Αποτέλεσμα υπερήχου</h3><form onsubmit="event.preventDefault();const v=Object.fromEntries(new FormData(this));send({type:'scan',...v});this.reset()">
+   <div class="grid2"><div><label>Ημερομηνία</label><input type="date" name="date" value="${today()}" required></div><div><label>Ενδομήτριο (mm)</label><input name="endo"></div><div><label>Θυλάκια δεξιά (mm)</label><input name="right" placeholder="12, 14, 16"></div><div><label>Θυλάκια αριστερά (mm)</label><input name="left"></div><div><label>E2</label><input name="e2"></div></div>
+   <label>Οδηγίες / αλλαγή δόσης</label><textarea name="notes"></textarea><button class="btn" style="margin-top:8px">Αποστολή</button></form></div>
+  <div class="card"><h3>🗓 Ημερομηνίες κύκλου</h3><form onsubmit="event.preventDefault();const v=Object.fromEntries(new FormData(this));Object.keys(v).forEach(k=>!v[k]&&delete v[k]);if(Object.keys(v).length)send({type:'plan',...v});this.reset()">
+   <div class="grid2"><div><label>Trigger (ημ/νία & ώρα)</label><input type="datetime-local" name="trigger"></div><div><label>Ωοληψία</label><input type="date" name="opu"></div><div><label>Εμβρυομεταφορά</label><input type="date" name="transfer"></div><div><label>β-hCG</label><input type="date" name="beta"></div></div><button class="btn" style="margin-top:8px">Αποστολή</button></form></div>
+  <div class="card"><h3>📅 Ραντεβού</h3><form onsubmit="event.preventDefault();const v=Object.fromEntries(new FormData(this));send({type:'appt',...v});this.reset()"><label>Τι</label><input name="title" required placeholder="π.χ. Υπερηχογράφημα παρακολούθησης"><div class="grid2"><div><label>Ημερομηνία</label><input type="date" name="date" required></div><div><label>Ώρα</label><input type="time" name="time"></div></div><button class="btn" style="margin-top:8px">Αποστολή</button></form>
+   <h3 style="margin-top:16px">✉️ Μήνυμα</h3><form onsubmit="event.preventDefault();const v=Object.fromEntries(new FormData(this));send({type:'msg',text:v.text});this.reset()"><textarea name="text" required></textarea><button class="btn" style="margin-top:8px">Αποστολή</button></form></div>
+  </div>
+  <div class="card" style="margin-top:14px"><h3>Απεσταλμένα</h3>${SENT.length?`<table>${SENT.map(i=>`<tr><td class="small">${new Date(i.created).toLocaleString('el-GR')}</td><td>${{meds:'💊 Φάρμακα',scan:'🔍 Υπέρηχος',appt:'📅 Ραντεβού',plan:'🗓 Ημερομηνίες',msg:'✉️ Μήνυμα'}[i.type]||i.type}</td><td class="small">${i.type==='msg'?esc(i.text).slice(0,80):i.type==='meds'?(i.items||[]).map(m=>esc(m.name)).join(', '):i.type==='appt'?esc(i.title)+' '+fmt(i.date):i.type==='scan'?fmt(i.date):''}</td><td>${i.read?'<span class="pill">✓ Το είδε</span>':'<span class="small muted">Δεν το έχει δει</span>'}${i.imported?' <span class="pill">Προστέθηκε</span>':''}</td></tr>`).join('')}</table>`:'<p class="muted small">Τίποτα ακόμη.</p>'}</div>`;
+}
+function medRow(){return `<div class="medrow"><input placeholder="Φάρμακο" class="m-n"><input placeholder="Δόση" class="m-d"><input placeholder="Ώρες (20:00)" class="m-t"><input type="date" class="m-s" value="${today()}"><input type="date" class="m-e"><select class="m-y"><option value="inj">Ένεση</option><option value="pill">Χάπι</option><option value="vag">Κολπικό</option><option value="patch">Επίθεμα/τζελ</option><option value="supp">Συμπλήρωμα</option></select></div>`}
+function sendMeds(){const items=[...document.querySelectorAll('.medrow')].map(r=>({name:r.querySelector('.m-n').value.trim(),dose:r.querySelector('.m-d').value,times:r.querySelector('.m-t').value,start:r.querySelector('.m-s').value,end:r.querySelector('.m-e').value,type:r.querySelector('.m-y').value})).filter(m=>m.name);if(!items.length){toast('Πρόσθεσε τουλάχιστον ένα φάρμακο');return}send({type:'meds',items})}
+function draw(){
+  $('#who').innerHTML=ME?`${esc(ME.displayName||ME.email)} <button class="btn alt sm" onclick="AU.signOut()">Αποσύνδεση</button>`:'';
+  if(!ME){$('#root').innerHTML=`<div style="max-width:520px;margin:60px auto;padding:20px"><div class="card"><h1>Πύλη γιατρών</h1><p>Συνδεθείτε για να βλέπετε τις καταγραφές των ασθενών σας στην εφαρμογή Baby O’Clock και να τους στέλνετε πρόγραμμα φαρμάκων, αποτελέσματα υπερήχων, ημερομηνίες και μηνύματα.</p><button class="btn gbtn" onclick="signin()">Σύνδεση με Google</button><p class="small muted" style="margin-top:12px">Η πρόσβαση σε κάθε ασθενή γίνεται μόνο με κωδικό που δημιουργεί η ίδια η ασθενής και μπορεί να ανακληθεί από εκείνη οποιαδήποτε στιγμή.</p></div></div>`;return}
+  const p=PATS.find(x=>x.id===SEL);
+  $('#root').innerHTML=`<main><aside><div class="card"><h2>Νέα ασθενής</h2><p class="small muted">Βάλτε τον κωδικό 6 χαρακτήρων από την εφαρμογή της ασθενούς.</p><div class="row"><input id="code" value="${esc(qcode)}" maxlength="6" style="text-transform:uppercase;flex:1;letter-spacing:.2em;font-weight:700"><button class="btn" onclick="link($('#code').value)">Σύνδεση</button></div></div>
+   <div class="card" style="margin-top:14px"><h2>Οι ασθενείς μου</h2>${PATS.length?PATS.map(x=>`<button class="pt ${x.id===SEL?'on':''}" onclick="select('${x.id}')"><b>${esc(x.name)}</b><br><span class="small muted">από ${fmt(ymd(new Date(x.since)))}</span></button>`).join(''):'<p class="muted small">Καμία ακόμη.</p>'}</div></aside>
+   <section>${p?`<div class="card"><div class="row between"><h1 style="margin:0">${esc(p.name)}</h1><button class="btn alt sm" onclick="select('${p.id}')">↻ Ανανέωση</button></div>
+    <div class="tabs" style="margin-top:12px"><button class="${TAB==='summary'?'on':''}" onclick="TAB='summary';draw()">Καταγραφές ασθενούς</button><button class="${TAB==='send'?'on':''}" onclick="TAB='send';draw()">Αποστολή στην ασθενή</button></div>
+    ${TAB==='summary'?summaryHTML():sendHTML()}</div>`:`<div class="card empty"><h2>Επιλέξτε ασθενή</h2><p class="muted">ή συνδέστε νέα με τον κωδικό της.</p></div>`}</section></main>`;
+}
+draw();
+</script>
+</body>
+</html>

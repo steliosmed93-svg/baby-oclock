@@ -1,0 +1,10 @@
+{
+  "appId": "eu.babyoclock.app",
+  "appName": "Baby O'Clock",
+  "webDir": "www",
+  "server": { "androidScheme": "https" },
+  "plugins": {
+    "SplashScreen": { "launchShowDuration": 800, "backgroundColor": "#fbf6f2" },
+    "LocalNotifications": { "iconColor": "#2f7f7a" }
+  }
+}

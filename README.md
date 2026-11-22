@@ -7,3 +7,10 @@
 Συνοδευτική εφαρμογή για γιατρούς: [ivf-protocols](https://github.com/steliosmed93-svg/ivf-protocols)
 
 Live: https://steliosmed93-svg.github.io/baby-oclock/
+
+
+## Πύλη γιατρών
+https://steliosmed93-svg.github.io/baby-oclock/doctor.html : ο γιατρός συνδέεται με Google, βάζει τον κωδικό της ασθενούς, βλέπει τις καταγραφές της (αν το επιτρέψει) και της στέλνει πρόγραμμα φαρμάκων, υπερήχους, ημερομηνίες, ραντεβού και μηνύματα.
+
+## Stores
+Δες το STORE-GUIDE.md.
