@@ -224,6 +224,7 @@ details.ex summary{font-weight:600}
 .injmap{width:100%;max-width:300px;display:block;margin:0 auto}
 .injmap .zsug{animation:zp 1.4s infinite;transform-box:fill-box;transform-origin:center}
 @keyframes zp{50%{transform:scale(1.18)}}
+.orline{display:flex;align-items:center;gap:10px;margin:14px 0 4px;color:var(--muted);font-size:.85rem}.orline::before,.orline::after{content:'';flex:1;height:1px;background:var(--line)}
 .sectionTitle{display:flex;align-items:baseline;justify-content:space-between;margin:26px 0 10px}
 </style>
 </head>
@@ -772,7 +773,7 @@ V.settings=()=>{const lc=lockCfg();const th=localStorage.getItem('bo-theme')||'a
   <div class="grid g2">
    <div class="card"><h3>🌙 Εμφάνιση</h3><div class="chips">${[['auto','Αυτόματη'],['light','☀️ Φωτεινή'],['dark','🌙 Σκοτεινή']].map(([k,l])=>`<button class="chip ${th===k?'on':''}" data-a="theme" data-v="${k}">${l}</button>`).join('')}</div></div>
    <div class="card"><h3>🔒 Κλείδωμα εφαρμογής</h3>${lc?`<p class="small">Η εφαρμογή κλειδώνει με PIN${lc.bio?' και βιομετρικά (Face ID / δακτυλικό)':''} όταν ανοίγει και μετά από 2 λεπτά εκτός.</p><div class="row">${lc.bio?'':'<button class="btn alt sm" id="biobtn" data-a="bioon">🔐 Ενεργοποίηση Face ID / δακτυλικού</button>'}<button class="btn alt sm" data-a="lockoff">Απενεργοποίηση</button></div>`:`<form data-form="lockset" class="fields two"><div><label>Νέο PIN (4 έως 6 ψηφία)</label><input name="p1" type="password" inputmode="numeric" pattern="[0-9]{4,6}" required></div><div><label>Επανάληψη</label><input name="p2" type="password" inputmode="numeric" pattern="[0-9]{4,6}" required></div><div><button class="btn sm">Ενεργοποίηση</button></div></form>`}</div>
-   <div class="card"><h3>Λογαριασμός Google</h3>${USER?`<p class="small">Συνδεδεμένη ως <b>${esc(USER.email||USER.displayName||'')}</b>. Οι καταγραφές σου συγχρονίζονται αυτόματα.</p><div class="row"><button class="btn alt sm" data-a="signout">Αποσύνδεση</button><button class="btn danger sm" data-a="delcloud">Διαγραφή δεδομένων από το cloud</button></div>`:`<p class="small">Συνδέσου για να κρατάς τις καταγραφές σου με ασφάλεια και να τις βλέπεις από κάθε συσκευή.</p><button class="btn gbtn sm" data-a="signin">${G_IC} Σύνδεση με Google</button>`}</div>
+   <div class="card"><h3>Λογαριασμός</h3>${USER?`<p class="small">Συνδεδεμένη ως <b>${esc(USER.email||USER.displayName||'')}</b>. Οι καταγραφές σου συγχρονίζονται αυτόματα.</p><div class="row"><button class="btn alt sm" data-a="signout">Αποσύνδεση</button><button class="btn danger sm" data-a="delcloud">Διαγραφή δεδομένων από το cloud</button></div>`:`<p class="small">Συνδέσου για να κρατάς τις καταγραφές σου με ασφάλεια και να τις βλέπεις από κάθε συσκευή.</p><button class="btn sm" data-a="signin">Σύνδεση ή δημιουργία λογαριασμού</button>`}</div>
    <div class="card"><form data-form="profile"><label>Πώς να σε λέω;</label><input name="name" value="${esc(S.profile.name)}"><label>Το κινητό μου (μπαίνει στα επείγοντα email)</label><input name="phone" type="tel" value="${esc(S.profile.phone||'')}"><button class="btn" style="margin-top:12px">Αποθήκευση</button></form></div>
    <div class="card">
     <h3>Τα δεδομένα μου</h3>
@@ -842,18 +843,39 @@ async function pushCloud(){
   acct();
 }
 function schedulePush(){if(!USER)return;clearTimeout(pushT);pushT=setTimeout(()=>{pushCloud();if(typeof shareSync==='function')shareSync()},1200)}
+const AUTHERR={'auth/invalid-email':'Μη έγκυρο email.','auth/missing-password':'Βάλε κωδικό.','auth/weak-password':'Ο κωδικός πρέπει να έχει τουλάχιστον 6 χαρακτήρες.','auth/email-already-in-use':'Υπάρχει ήδη λογαριασμός με αυτό το email. Πάτα «Έχω λογαριασμό».','auth/invalid-credential':'Λάθος email ή κωδικός.','auth/wrong-password':'Λάθος κωδικός.','auth/user-not-found':'Δεν υπάρχει λογαριασμός με αυτό το email.','auth/too-many-requests':'Πολλές προσπάθειες. Δοκίμασε σε λίγα λεπτά.','auth/network-request-failed':'Δεν υπάρχει σύνδεση στο ίντερνετ.'};
 function signIn(){S.profile.onboarded=true;save(true);
-  const m=document.createElement('div');m.className='modal';
-  m.innerHTML=`<div class="card"><h2>Σύνδεση με Google</h2><p>Με τη σύνδεση, οι καταγραφές σου (κύκλοι, φάρμακα, συμπτώματα, ημερολόγιο, ασκήσεις Psy Coach) αποθηκεύονται με ασφάλεια στον λογαριασμό σου και τις βλέπεις από κάθε συσκευή.</p><ul class="small"><li>Μόνο εσύ έχεις πρόσβαση στα δεδομένα σου.</li><li>Δεν κοινοποιούνται σε κανέναν, εκτός αν τα στείλεις εσύ στον γιατρό ή στον ψυχολόγο σου.</li><li>Μπορείς να τα διαγράψεις όποτε θέλεις από τις Ρυθμίσεις.</li></ul><label class="row" style="font-weight:500;gap:8px;align-items:flex-start;flex-wrap:nowrap"><input type="checkbox" id="cons" style="width:auto;margin-top:4px"> Συμφωνώ να αποθηκεύονται τα προσωπικά μου δεδομένα υγείας στον λογαριασμό μου για τον σκοπό της εφαρμογής, σύμφωνα με την <a href="#privacy" onclick="this.closest('.modal').remove()">πολιτική απορρήτου</a>.</label><div class="row" style="margin-top:14px"><button class="btn gbtn" id="goG">${G_IC} Σύνδεση με Google</button><button class="btn alt" id="noG">Άκυρο</button></div></div>`;
-  document.body.appendChild(m);
-  m.querySelector('#noG').onclick=()=>m.remove();
-  m.querySelector('#goG').onclick=async()=>{
-    if(!m.querySelector('#cons').checked){toast('Τσέκαρε πρώτα τη συγκατάθεση');return}
-    if(typeof firebase==='undefined'||!firebase.apps.length){toast('Χρειάζεται σύνδεση στο ίντερνετ');return}
-    const p=new firebase.auth.GoogleAuthProvider();p.setCustomParameters({prompt:'select_account'});
-    try{await firebase.auth().signInWithPopup(p);m.remove();toast('Συνδέθηκες!')}
-    catch(e){if(e.code==='auth/popup-blocked'||e.code==='auth/operation-not-supported-in-this-environment'){firebase.auth().signInWithRedirect(p)}else if(e.code!=='auth/popup-closed-by-user'&&e.code!=='auth/cancelled-popup-request'){toast('Η σύνδεση απέτυχε: '+(e.code||''))}}
+  let mode='login';const m=document.createElement('div');m.className='modal';
+  const draw=()=>{m.innerHTML=`<div class="card"><div class="row between"><h2 style="margin:0">${mode==='register'?'Δημιουργία λογαριασμού':mode==='reset'?'Ξέχασα τον κωδικό':'Σύνδεση'}</h2><button class="btn ghost" data-x="close">✕</button></div>
+   <p class="small">Με τη σύνδεση, οι καταγραφές σου αποθηκεύονται με ασφάλεια στον λογαριασμό σου και τις βλέπεις από κάθε συσκευή. Μόνο εσύ έχεις πρόσβαση.</p>
+   ${mode!=='reset'?`<label class="row" style="font-weight:500;gap:8px;align-items:flex-start;flex-wrap:nowrap"><input type="checkbox" id="cons" style="width:auto;margin-top:4px"><span>Συμφωνώ να αποθηκεύονται τα προσωπικά μου δεδομένα υγείας στον λογαριασμό μου για τον σκοπό της εφαρμογής, σύμφωνα με την <a href="#privacy" data-x="close">πολιτική απορρήτου</a>.</span></label>
+   <button class="btn gbtn" data-x="google" style="width:100%;justify-content:center;margin-top:12px">${G_IC} Συνέχεια με Google</button>
+   <div class="orline"><span>ή με email</span></div>`:''}
+   <form id="emf">${mode==='register'?'<label>Όνομα</label><input name="name" autocomplete="name">':''}
+    <label>Email</label><input name="email" type="email" autocomplete="email" required>
+    ${mode!=='reset'?`<label>Κωδικός</label><input name="pw" type="password" autocomplete="${mode==='register'?'new-password':'current-password'}" minlength="6" required>`:''}
+    <p class="small redt" id="aerr" style="min-height:1em;margin:6px 0"></p>
+    <button class="btn" style="width:100%;justify-content:center">${mode==='register'?'Δημιουργία λογαριασμού':mode==='reset'?'Στείλε μου σύνδεσμο':'Σύνδεση'}</button></form>
+   <div class="row between small" style="margin-top:10px">${mode==='login'?'<a href="#" data-x="register">Δεν έχω λογαριασμό</a><a href="#" data-x="reset">Ξέχασα τον κωδικό</a>':'<a href="#" data-x="login">Έχω λογαριασμό</a>'}</div></div>`;
+   m.querySelector('#emf').onsubmit=async ev=>{ev.preventDefault();const v=Object.fromEntries(new FormData(ev.target));const er=m.querySelector('#aerr');er.textContent='';
+     if(typeof firebase==='undefined'||!firebase.apps.length){er.textContent='Χρειάζεται σύνδεση στο ίντερνετ.';return}
+     if(mode!=='reset'&&!m.querySelector('#cons').checked){er.textContent='Τσέκαρε πρώτα τη συγκατάθεση.';return}
+     try{const A=firebase.auth();
+       if(mode==='reset'){await A.sendPasswordResetEmail(v.email);er.style.color='var(--teal)';er.textContent='Σου στείλαμε email για νέο κωδικό. Δες και τα ανεπιθύμητα.';return}
+       if(mode==='register'){const c=await A.createUserWithEmailAndPassword(v.email,v.pw);if(v.name){await c.user.updateProfile({displayName:v.name});if(!S.profile.name){S.profile.name=v.name;save(true)}}try{await c.user.sendEmailVerification()}catch(x){}USER=A.currentUser;acct();toast('Ο λογαριασμός δημιουργήθηκε 💜')}
+       else{await A.signInWithEmailAndPassword(v.email,v.pw);toast('Συνδέθηκες!')}
+       m.remove()}catch(x){er.textContent=AUTHERR[x.code]||('Σφάλμα: '+(x.code||''))}};
   };
+  draw();document.body.appendChild(m);
+  m.addEventListener('click',async ev=>{const x=ev.target.closest('[data-x]');if(!x)return;const k=x.dataset.x;
+    if(k==='close'){m.remove();return}
+    if(['login','register','reset'].includes(k)){ev.preventDefault();mode=k;draw();return}
+    if(k==='google'){if(!m.querySelector('#cons').checked){m.querySelector('#aerr').textContent='Τσέκαρε πρώτα τη συγκατάθεση.';return}
+      if(typeof firebase==='undefined'||!firebase.apps.length){toast('Χρειάζεται σύνδεση στο ίντερνετ');return}
+      const p=new firebase.auth.GoogleAuthProvider();p.setCustomParameters({prompt:'select_account'});
+      try{await firebase.auth().signInWithPopup(p);m.remove();toast('Συνδέθηκες!')}
+      catch(e){if(e.code==='auth/popup-blocked'||e.code==='auth/operation-not-supported-in-this-environment'){firebase.auth().signInWithRedirect(p)}else if(e.code!=='auth/popup-closed-by-user'&&e.code!=='auth/cancelled-popup-request'){m.querySelector('#aerr').textContent=AUTHERR[e.code]||('Σφάλμα: '+(e.code||''))}}}
+  });
 }
 async function signOut(){
   const wipe=confirm('Αποσύνδεση.\n\nΘέλεις να σβηστούν τα δεδομένα και από αυτή τη συσκευή; (προτείνεται αν η συσκευή δεν είναι δική σου)\n\nΟΚ: σβήσ\' τα από τη συσκευή\nΆκυρο: κράτα τα στη συσκευή');
@@ -868,7 +890,7 @@ async function deleteCloud(){
 }
 function acct(){
   const el=$('#acct');if(!el)return;
-  if(!USER){el.innerHTML=`<button class="btn gbtn sm" data-a="signin">${G_IC}<span class="hideS">Σύνδεση με Google</span><span class="showS">Σύνδεση</span></button>`;return}
+  if(!USER){el.innerHTML=`<button class="btn gbtn sm" data-a="signin">👤 <span>Σύνδεση</span></button>`;return}
   const st={sync:'⏳ Συγχρονισμός…',ok:'✓ Αποθηκεύτηκαν στο cloud',err:'⚠️ Σφάλμα συγχρονισμού',offline:'Εκτός σύνδεσης'}[syncState]||'';
   const ph=USER.photoURL?`<img src="${esc(USER.photoURL)}" alt="" referrerpolicy="no-referrer">`:`<span>${esc((USER.displayName||USER.email||'?')[0])}</span>`;
   el.innerHTML=`<button class="avatar" data-a="acctmenu" aria-label="Λογαριασμός">${ph}<i class="dot ${syncState}"></i></button>
@@ -1257,7 +1279,7 @@ async function inboxImport(id){
 }
 V.care=()=>{
   S.care=S.care||{share:true};
-  if(!USER)return `<h1>Ο γιατρός μου</h1><div class="grid g2"><div class="card coachHero"><span class="pill">🩺 Σύνδεση με γιατρό</span><h2 style="margin-top:10px">Ο γιατρός σου στέλνει, εσύ τα βλέπεις αμέσως</h2><p>Πρόγραμμα φαρμάκων, αποτελέσματα υπερήχων, ημερομηνίες και μηνύματα, κατευθείαν στην εφαρμογή σου. Και ο γιατρός βλέπει τις καταγραφές σου, μόνο αν το επιτρέψεις.</p></div><div class="card"><p>Για να συνδεθείς με τον γιατρό σου χρειάζεται πρώτα σύνδεση με Google.</p><button class="btn gbtn" data-a="signin">${G_IC} Σύνδεση με Google</button></div></div>`;
+  if(!USER)return `<h1>Ο γιατρός μου</h1><div class="grid g2"><div class="card coachHero"><span class="pill">🩺 Σύνδεση με γιατρό</span><h2 style="margin-top:10px">Ο γιατρός σου στέλνει, εσύ τα βλέπεις αμέσως</h2><p>Πρόγραμμα φαρμάκων, αποτελέσματα υπερήχων, ημερομηνίες και μηνύματα, κατευθείαν στην εφαρμογή σου. Και ο γιατρός βλέπει τις καταγραφές σου, μόνο αν το επιτρέψεις.</p></div><div class="card"><p>Για να συνδεθείς με τον γιατρό σου χρειάζεται πρώτα λογαριασμός (με Google ή με email).</p><button class="btn" data-a="signin">Σύνδεση ή δημιουργία λογαριασμού</button></div></div>`;
   const lc=S.care.lastCode&&S.care.lastCode.exp>Date.now()?S.care.lastCode:null;
   return `<h1>Ο γιατρός μου</h1>
   <div class="grid g2">
@@ -1574,7 +1596,7 @@ async function partnerJoin(code){
 }
 V.partner=()=>{
   S.care=S.care||{share:true};
-  if(!USER)return `<h1>Σύντροφος</h1><div class="grid g2"><div class="card pgHero"><span class="pill">👫 Μαζί</span><h2 style="margin-top:10px">Η θεραπεία γίνεται από δύο</h2><p>Ο/η σύντροφος βλέπει τον κύκλο, τα ραντεβού και τα νέα του εργαστηρίου, παίρνει υπενθυμίσεις για τον ρόλο του/της και στέλνει μηνύματα στήριξης.</p></div><div class="card"><p>Χρειάζεται σύνδεση με Google και από τους δύο.</p><button class="btn gbtn" data-a="signin">${G_IC} Σύνδεση με Google</button></div></div>`;
+  if(!USER)return `<h1>Σύντροφος</h1><div class="grid g2"><div class="card pgHero"><span class="pill">👫 Μαζί</span><h2 style="margin-top:10px">Η θεραπεία γίνεται από δύο</h2><p>Ο/η σύντροφος βλέπει τον κύκλο, τα ραντεβού και τα νέα του εργαστηρίου, παίρνει υπενθυμίσεις για τον ρόλο του/της και στέλνει μηνύματα στήριξης.</p></div><div class="card"><p>Χρειάζεται λογαριασμός (Google ή email) και από τους δύο.</p><button class="btn" data-a="signin">Σύνδεση ή δημιουργία λογαριασμού</button></div></div>`;
   if(S.partnerOf){
     if(!PSUM)partnerLoad();const s=PSUM||{};const nm=esc(S.partnerOf.name||s.name||'η σύντροφός σου');
     if(PSUM&&(PSUM.denied||!PSUM.updatedMs))return `<h1>Σύντροφος</h1><div class="card"><p>${PSUM.denied?'Δεν υπάρχει πλέον πρόσβαση: ίσως αφαιρέθηκε η σύνδεση.':'Η '+nm+' πρέπει να ενεργοποιήσει «Ο γιατρός μου βλέπει τις καταγραφές μου» στην καρτέλα «Ο γιατρός μου», ώστε να βλέπεις τον κύκλο.'}</p><div class="row"><button class="btn alt sm" data-a="pload">↻ Ανανέωση</button><button class="btn ghost" data-a="pleave">Αποσύνδεση από τον λογαριασμό της</button></div></div>`;
@@ -1751,7 +1773,7 @@ document.addEventListener('submit',e=>{
 function onboard(){
   if(S.profile.onboarded)return;
   const m=document.createElement('div');m.className='modal';
-  m.innerHTML=`<div class="card"><img src="icon.svg" alt="" width="56"><h2 style="margin-top:10px">Καλώς ήρθες</h2><p>Το «Baby O’Clock» είναι ο βοηθός σου στην εξωσωματική. Σε βοηθά να οργανώσεις τον κύκλο σου: φάρμακα, ραντεβού, συμπτώματα, και να καταλαβαίνεις κάθε βήμα.</p><ul class="small"><li>Τα δεδομένα σου μένουν <b>στη συσκευή σου</b>, ή στον <b>λογαριασμό σου Google</b> αν συνδεθείς. Κανείς άλλος δεν τα βλέπει.</li><li>Η εφαρμογή <b>δεν αντικαθιστά</b> τις οδηγίες του γιατρού σου.</li><li>Σε έντονα συμπτώματα, καλείς την κλινική.</li><li>Στο <b>Fertility Psy Coach</b> θα βρεις ασκήσεις για εσένα και για το ζευγάρι.</li></ul><form data-form="onboard"><label>Πώς να σε λέω; (προαιρετικό)</label><input name="name"><button class="btn" style="margin-top:14px;width:100%;justify-content:center">Ξεκινάμε</button></form><p class="small muted" style="text-align:center;margin-top:12px">Έχεις ήδη λογαριασμό; <a href="#" data-a="signin" onclick="this.closest('.modal').remove()">Σύνδεση με Google</a> για να φέρεις τις καταγραφές σου.</p></div>`;
+  m.innerHTML=`<div class="card"><img src="icon.svg" alt="" width="56"><h2 style="margin-top:10px">Καλώς ήρθες</h2><p>Το «Baby O’Clock» είναι ο βοηθός σου στην εξωσωματική. Σε βοηθά να οργανώσεις τον κύκλο σου: φάρμακα, ραντεβού, συμπτώματα, και να καταλαβαίνεις κάθε βήμα.</p><ul class="small"><li>Τα δεδομένα σου μένουν <b>στη συσκευή σου</b>, ή στον <b>λογαριασμό σου Google</b> αν συνδεθείς. Κανείς άλλος δεν τα βλέπει.</li><li>Η εφαρμογή <b>δεν αντικαθιστά</b> τις οδηγίες του γιατρού σου.</li><li>Σε έντονα συμπτώματα, καλείς την κλινική.</li><li>Στο <b>Fertility Psy Coach</b> θα βρεις ασκήσεις για εσένα και για το ζευγάρι.</li></ul><form data-form="onboard"><label>Πώς να σε λέω; (προαιρετικό)</label><input name="name"><button class="btn" style="margin-top:14px;width:100%;justify-content:center">Ξεκινάμε</button></form><p class="small muted" style="text-align:center;margin-top:12px">Έχεις ήδη λογαριασμό; <a href="#" data-a="signin" onclick="this.closest('.modal').remove()">Σύνδεση</a> για να φέρεις τις καταγραφές σου.</p></div>`;
   document.body.appendChild(m);
 }
 

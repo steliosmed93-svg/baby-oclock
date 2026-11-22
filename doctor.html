@@ -50,6 +50,12 @@ const qcode=new URLSearchParams(location.search).get('code')||'';
 AU.onAuthStateChanged(async u=>{ME=u;if(u){await loadPats();}draw()});
 async function loadPats(){const s=await DB.collection('doctors').doc(ME.uid).collection('patients').orderBy('since','desc').get().catch(()=>null);PATS=s?s.docs.map(d=>({id:d.id,...d.data()})):[]}
 async function signin(){const p=new firebase.auth.GoogleAuthProvider();p.setCustomParameters({prompt:'select_account'});try{await AU.signInWithPopup(p)}catch(e){if(e.code==='auth/popup-blocked')AU.signInWithRedirect(p)}}
+const AERR={'auth/invalid-email':'Μη έγκυρο email.','auth/weak-password':'Ο κωδικός πρέπει να έχει τουλάχιστον 6 χαρακτήρες.','auth/email-already-in-use':'Υπάρχει ήδη λογαριασμός με αυτό το email.','auth/invalid-credential':'Λάθος email ή κωδικός.','auth/too-many-requests':'Πολλές προσπάθειες. Δοκιμάστε σε λίγο.'};
+async function emailAuth(mode){const e=$('#em').value.trim(),p=$('#pw').value,n=$('#nm')?$('#nm').value.trim():'';const er=$('#aerr');er.textContent='';
+  try{if(mode==='reset'){await AU.sendPasswordResetEmail(e);er.style.color='var(--teal)';er.textContent='Στάλθηκε email για νέο κωδικό.';return}
+    if(mode==='register'){const c=await AU.createUserWithEmailAndPassword(e,p);if(n)await c.user.updateProfile({displayName:n});try{await c.user.sendEmailVerification()}catch(x){}ME=AU.currentUser;draw()}
+    else await AU.signInWithEmailAndPassword(e,p)}catch(x){er.textContent=AERR[x.code]||('Σφάλμα: '+(x.code||''))}}
+let AMODE='login';
 async function link(code){
   code=(code||'').trim().toUpperCase();if(code.length!==6){toast('Ο κωδικός έχει 6 χαρακτήρες');return}
   try{const l=await DB.collection('links').doc(code).get();if(!l.exists){toast('Ο κωδικός δεν βρέθηκε');return}const d=l.data();if(d.exp<Date.now()){toast('Ο κωδικός έχει λήξει. Ζήτησε νέο από την ασθενή.');return}
@@ -101,7 +107,14 @@ function medRow(){return `<div class="medrow"><input placeholder="Φάρμακο
 function sendMeds(){const items=[...document.querySelectorAll('.medrow')].map(r=>({name:r.querySelector('.m-n').value.trim(),dose:r.querySelector('.m-d').value,times:r.querySelector('.m-t').value,start:r.querySelector('.m-s').value,end:r.querySelector('.m-e').value,type:r.querySelector('.m-y').value})).filter(m=>m.name);if(!items.length){toast('Πρόσθεσε τουλάχιστον ένα φάρμακο');return}send({type:'meds',items})}
 function draw(){
   $('#who').innerHTML=ME?`${esc(ME.displayName||ME.email)} <button class="btn alt sm" onclick="AU.signOut()">Αποσύνδεση</button>`:'';
-  if(!ME){$('#root').innerHTML=`<div style="max-width:520px;margin:60px auto;padding:20px"><div class="card"><h1>Πύλη γιατρών</h1><p>Συνδεθείτε για να βλέπετε τις καταγραφές των ασθενών σας στην εφαρμογή Baby O’Clock και να τους στέλνετε πρόγραμμα φαρμάκων, αποτελέσματα υπερήχων, ημερομηνίες και μηνύματα.</p><button class="btn gbtn" onclick="signin()">Σύνδεση με Google</button><p class="small muted" style="margin-top:12px">Η πρόσβαση σε κάθε ασθενή γίνεται μόνο με κωδικό που δημιουργεί η ίδια η ασθενής και μπορεί να ανακληθεί από εκείνη οποιαδήποτε στιγμή.</p></div></div>`;return}
+  if(!ME){$('#root').innerHTML=`<div style="max-width:520px;margin:60px auto;padding:20px"><div class="card"><h1>Πύλη γιατρών</h1><p>Συνδεθείτε για να βλέπετε τις καταγραφές των ασθενών σας στην εφαρμογή Baby O’Clock και να τους στέλνετε πρόγραμμα φαρμάκων, αποτελέσματα υπερήχων, ημερομηνίες και μηνύματα.</p>
+   <button class="btn gbtn" style="width:100%" onclick="signin()">Συνέχεια με Google</button>
+   <p class="small muted" style="text-align:center;margin:12px 0 4px">ή με email</p>
+   ${AMODE==='register'?'<label>Ονοματεπώνυμο (π.χ. Δρ. Ιωάννης Παπαδόπουλος)</label><input id="nm">':''}<label>Email</label><input id="em" type="email"><label>Κωδικός</label><input id="pw" type="password" minlength="6">
+   <p class="small" id="aerr" style="color:var(--red);min-height:1em"></p>
+   <button class="btn" style="width:100%" onclick="emailAuth(AMODE)">${AMODE==='register'?'Δημιουργία λογαριασμού':'Σύνδεση'}</button>
+   <div class="row between small" style="margin-top:10px">${AMODE==='register'?'<a href="#" onclick="AMODE=\'login\';draw();return false">Έχω λογαριασμό</a>':'<a href="#" onclick="AMODE=\'register\';draw();return false">Νέος λογαριασμός</a><a href="#" onclick="emailAuth(\'reset\');return false">Ξέχασα τον κωδικό</a>'}</div>
+   <p class="small muted" style="margin-top:12px">Η πρόσβαση σε κάθε ασθενή γίνεται μόνο με κωδικό που δημιουργεί η ίδια η ασθενής και μπορεί να ανακληθεί από εκείνη οποιαδήποτε στιγμή.</p></div></div>`;return}
   const p=PATS.find(x=>x.id===SEL);
   $('#root').innerHTML=`<main><aside><div class="card"><h2>Νέα ασθενής</h2><p class="small muted">Βάλτε τον κωδικό 6 χαρακτήρων από την εφαρμογή της ασθενούς.</p><div class="row"><input id="code" value="${esc(qcode)}" maxlength="6" style="text-transform:uppercase;flex:1;letter-spacing:.2em;font-weight:700"><button class="btn" onclick="link($('#code').value)">Σύνδεση</button></div></div>
    <div class="card" style="margin-top:14px"><h2>Οι ασθενείς μου</h2>${PATS.length?PATS.map(x=>`<button class="pt ${x.id===SEL?'on':''}" onclick="select('${x.id}')"><b>${esc(x.name)}</b><br><span class="small muted">από ${fmt(ymd(new Date(x.since)))}</span></button>`).join(''):'<p class="muted small">Καμία ακόμη.</p>'}</div></aside>
