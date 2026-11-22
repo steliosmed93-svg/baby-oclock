@@ -8,10 +8,10 @@
 Όλα αποθηκεύονται στο `S.body.days[YYYY-MM-DD]`:
 `hrv, rhr, rr, spo2, temp, sleepH, deep, rem, light, awake, bed, wake, steps, kcal, exMin, workouts[{type,min,int}], sys, dia, vo2, src`
 
-## Μετρήσεις τύπου WHOOP και αντιστοίχιση HealthKit
+## Μετρήσεις και αντιστοίχιση HealthKit
 | Πεδίο | HealthKit identifier | Σημείωση |
 |---|---|---|
-| hrv | HKQuantityTypeIdentifierHeartRateVariabilitySDNN | Apple = SDNN (WHOOP = RMSSD). Συγκρίνεται μόνο με τον προσωπικό μέσο όρο |
+| hrv | HKQuantityTypeIdentifierHeartRateVariabilitySDNN | Apple = SDNN (άλλες συσκευές = RMSSD). Συγκρίνεται μόνο με τον προσωπικό μέσο όρο |
 | rhr | HKQuantityTypeIdentifierRestingHeartRate | |
 | rr | HKQuantityTypeIdentifierRespiratoryRate | στον ύπνο |
 | spo2 | HKQuantityTypeIdentifierOxygenSaturation | ×100 |
@@ -23,7 +23,7 @@
 | sys / dia | BloodPressureSystolic / Diastolic | |
 | περίοδος | MenstrualFlow, OvulationTestResult, CervicalMucusQuality | γράφονται στο `S.period` |
 
-## Βαθμολογίες (δικοί μας αλγόριθμοι, όχι της WHOOP)
+## Βαθμολογίες (δικοί μας αλγόριθμοι)
 - **Ανάκαμψη 1–99%**: z-scores HRV (55%), RHR (30%), RR (15%) έναντι βάσης 30 ημερών + απόδοση ύπνου. Ποινή για θερμοκρασία > +0,5°C εκτός ωχρινικής και SpO2 < 94%. Πράσινο ≥67, κίτρινο 34–66, κόκκινο ≤33.
 - **Φόρτος 0–21**: 21·(1−e^(−load/220)), load = Σ λεπτά×ένταση + βήματα/1000×4 + λεπτά άσκησης χωρίς προπόνηση×2,5.
 - **Ανάγκη ύπνου**: βάση (8 ώρες) + φόρτος χθες + 25% του χρέους 3 ημερών + 0,25 ώρες στην ωχρινική + 0,5 ώρες στην εγκυμοσύνη.
