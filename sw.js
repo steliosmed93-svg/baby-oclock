@@ -1,4 +1,4 @@
-const CACHE = 'baby-oclock-v5';
+const CACHE = 'baby-oclock-v6';
 const ASSETS = ['./', './index.html', './doctor.html', './manifest.webmanifest', './icon.svg'];
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)).then(() => self.skipWaiting()));

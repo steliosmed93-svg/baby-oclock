@@ -216,6 +216,14 @@ details.ex summary{font-weight:600}
 [data-theme=dark] .chart text{fill:#cfc9d8}[data-theme=dark] .moods button{background:var(--surface2)}[data-theme=dark] .amenu a,[data-theme=dark] .amenu button{color:var(--ink)}
 [data-theme=dark] .cday.c-fert{background:#1f4945}[data-theme=dark] .cday.c-perp{background:repeating-linear-gradient(45deg,#4a2a22,#4a2a22 4px,#211e28 4px,#211e28 8px)}
 [data-theme=dark] .cstatus.ok{color:#9fe0d8}[data-theme=dark] .cstatus.amber{color:#f0dca5}
+.funnel{display:flex;flex-direction:column;gap:8px;margin-top:12px}
+.fstep{display:grid;grid-template-columns:1fr;gap:2px}
+.fbar{display:flex;align-items:center;justify-content:flex-end;height:34px;width:var(--w);min-width:44px;border-radius:10px;background:linear-gradient(90deg,#8fd1c8,#2f7f7a);color:#fff;padding:0 10px;animation:grow .7s ease both;animation-delay:var(--d)}
+.fstep:nth-child(n+5) .fbar{background:linear-gradient(90deg,#cfc4ee,#8a78c2)}
+@keyframes grow{from{width:0}}
+.injmap{width:100%;max-width:300px;display:block;margin:0 auto}
+.injmap .zsug{animation:zp 1.4s infinite;transform-box:fill-box;transform-origin:center}
+@keyframes zp{50%{transform:scale(1.18)}}
 .sectionTitle{display:flex;align-items:baseline;justify-content:space-between;margin:26px 0 10px}
 </style>
 </head>
@@ -349,7 +357,7 @@ const $=s=>document.querySelector(s);
 function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('show');clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove('show'),2200)}
 function nav(){
   const r=route().split('/')[0];
-  const moreSet=['more','scans','learn','questions','clinic','settings','inject','report','diary','period','preg','care','files','lifestyle','wellbeing','psybook','after','negative','baby','privacy','terms'];
+  const moreSet=['more','scans','learn','questions','clinic','settings','inject','report','diary','period','preg','care','files','lifestyle','wellbeing','psybook','after','negative','baby','privacy','terms','embryo','partner'];
   const PGA=S.preg&&S.preg.active,sw=a=>a.map(x=>x[0]==='period'&&PGA?['preg','Εγκυμοσύνη']:x);
   $('#tabbar').innerHTML=sw(TABS).map(([k,l])=>`<a href="#${k}" class="${(k===r||(k==='more'&&moreSet.includes(r)&&!(k===r)&&!((PGA&&r==='preg')||(!PGA&&r==='period'))))?'on':''}">${I[k]}<span>${l}</span></a>`).join('');
   $('#deskNav').innerHTML=sw(DESK).map(([k,l])=>`<a href="#${k}" class="${k===r?'on':''}">${l}</a>`).join('');
@@ -378,6 +386,8 @@ V.today=()=>{
    </div>
   </div>
   ${unread()?`<a class="card inbnote" href="#care"><b>🩺 ${unread()} ${unread()===1?'νέο':'νέα'} από τον γιατρό σου</b><span class="small">Πάτα για να τα δεις και να τα προσθέσεις στην εφαρμογή</span></a>`:''}
+  ${['lab','post','tww'].includes(p.key)||labCur()?`<a class="card inbnote" href="#embryo" style="background:var(--lilac-soft)"><b>🧬 Τα έμβρυά μου</b><span class="small">${labCur()&&labCur().eggs?labCur().eggs+' ωάρια'+(labCur().blast?' · '+labCur().blast+' βλαστοκύστες':''):'Κατέγραψε τα νέα του εργαστηρίου και δες τι σημαίνουν'}</span></a>`:''}
+  ${S.partnerOf?`<a class="card inbnote" href="#partner" style="background:var(--lilac-soft)"><b>👫 Μαζί με ${esc(S.partnerOf.name||'τη σύντροφό σου')}</b><span class="small">Δες τη φάση, τα ραντεβού και στείλε ένα μήνυμα</span></a>`:''}
   ${S.baby&&S.baby.born?`<a class="card inbnote" href="#baby" style="background:var(--coral-soft)"><b>👶 ${esc(S.baby.name||'Το μωρό μου')}</b><span class="small">Θηλασμός, πάνες, διάθεση, εμβόλια</span></a>`:''}
   ${trig?`<div class="alert info" style="margin-top:16px"><b>⏰ Trigger: ${fmtDT(S.cycle.trigger)}</b><br>Βάλε ξυπνητήρι στο κινητό. Η ακριβής ώρα είναι σημαντική για την ωοληψία. <a href="#" data-a="ics">Πρόσθεσέ το στο ημερολόγιο</a></div>`:''}
   <div class="grid g3" style="margin-top:16px">
@@ -472,12 +482,13 @@ V.meds=()=>{
     </form>
    </div>
   </div>
+  ${S.meds.some(m=>m.type==='inj')||(S.inj||[]).length?`<div style="margin-top:16px">${injCard()}</div>`:''}
   <div class="sectionTitle"><h2>Η λίστα μου</h2><a href="#inject">Οδηγός ενέσεων →</a></div>
   <div class="list">${S.meds.length?S.meds.map(m=>`<div class="item"><span><b>${esc(m.name)}</b> <span class="small muted">${esc(m.dose)}</span><br><span class="small">${TYPE[m.type]||''} · ${esc(m.times||'χωρίς ώρα')} · ${m.start?fmt(m.start):''}${m.end?' έως '+fmt(m.end):''}</span>${m.notes?`<br><span class="small muted">${esc(m.notes)}</span>`:''}</span><button class="btn ghost" data-a="delmed" data-id="${m.id}">✕</button></div>`).join(''):'<p class="muted">Η λίστα είναι άδεια. Πρόσθεσε τα φάρμακα όπως σου τα έγραψε η κλινική.</p>'}</div>
   <div class="alert info" style="margin-top:16px">Ξέχασες μια δόση; Μην διπλασιάσεις την επόμενη. Κάλεσε την κλινική για οδηγίες.</div>`;
 };
 
-V.inject=()=>`
+V.inject=()=>`<div style="margin-bottom:16px">${injCard()}</div>
   <a href="#meds" class="btn ghost">← Φάρμακα</a>
   <h1>Οδηγός υποδόριας ένεσης</h1>
   <p class="muted">Γενικά βήματα. Ακολούθησε πάντα το φύλλο οδηγιών του φαρμάκου σου και ό,τι σου έδειξε η νοσηλεύτρια.</p>
@@ -563,6 +574,8 @@ V.more=()=>`
   <h1>Περισσότερα</h1>
   <div class="tiles">
    ${tile('care','🩺','var(--teal-soft)','Ο γιατρός μου'+(unread()?' ('+unread()+')':''),'Σύνδεση, μηνύματα, πρόγραμμα')}
+   ${tile('embryo','🧬','var(--teal-soft)','Τα έμβρυά μου','Από τα ωάρια στις βλαστοκύστες')}
+   ${tile('partner','👫','var(--lilac-soft)','Σύντροφος','Μαζί στη θεραπεία')}
    ${tile('files','📷','var(--gold-soft)','Οι εξετάσεις μου','Φωτογραφίες ανά κύκλο')}
    ${tile('preg','🤰','var(--lilac-soft)','Εγκυμοσύνη','Εβδομάδες, συσπάσεις, κινήσεις')}
    ${tile('after','🌗','var(--surface2)','Μετά το αποτέλεσμα','Θετικό ή αρνητικό')}
@@ -1191,31 +1204,31 @@ function startTickers(){clearInterval(contrTick);contrTick=setInterval(()=>{cons
 const CARE={doctors:[],inbox:[],unsub:[],seen:new Set(),code:null};
 function careStop(){CARE.unsub.forEach(f=>{try{f()}catch(e){}});CARE.unsub=[];CARE.doctors=[];CARE.inbox=[]}
 function careStart(){
-  careStop();if(!USER||!DB)return;const ref=DB.collection('care').doc(USER.uid);
+  careStop();if(!USER||!DB)return;if(S.partnerOf)partnerLoad(true);const ref=DB.collection('care').doc(USER.uid);
   CARE.unsub.push(ref.collection('doctors').onSnapshot(s=>{CARE.doctors=s.docs.map(d=>({id:d.id,...d.data()}));if(['care','today'].includes(route().split('/')[0]))render();shareSync()},()=>{}));
   CARE.unsub.push(ref.collection('inbox').orderBy('created','desc').limit(60).onSnapshot(s=>{
     const items=s.docs.map(d=>({id:d.id,...d.data()}));
     items.filter(i=>!i.read&&!CARE.seen.has(i.id)).forEach(i=>{CARE.seen.add(i.id);if(CARE.inbox.length)notify('Νέο από '+(i.fromName||'τον γιατρό σου'),INBOX_T[i.type]||'Μήνυμα')});
     CARE.inbox=items;if(['care','today'].includes(route().split('/')[0]))render();acct()},()=>{}));
 }
-const INBOX_T={meds:'💊 Πρόγραμμα φαρμάκων',scan:'🔍 Αποτέλεσμα υπερήχου',appt:'📅 Ραντεβού',plan:'🗓 Ημερομηνίες κύκλου',msg:'✉️ Μήνυμα'};
+const INBOX_T={lab:'🧬 Ενημέρωση εργαστηρίου',cheer:'💌 Από τον/τη σύντροφο',meds:'💊 Πρόγραμμα φαρμάκων',scan:'🔍 Αποτέλεσμα υπερήχου',appt:'📅 Ραντεβού',plan:'🗓 Ημερομηνίες κύκλου',msg:'✉️ Μήνυμα'};
 const unread=()=>CARE.inbox.filter(i=>!i.read).length;
 function shareSummary(){
   const t=today(),logs={};Object.keys(S.logs).filter(d=>d>=addDays(t,-45)).forEach(d=>logs[d]=S.logs[d]);
   const pdays={};const P=PD();Object.keys(P.days).filter(d=>d>=addDays(t,-60)).forEach(d=>pdays[d]=P.days[d]);
   const ps=pStats();const g=PG();
   return {name:S.profile.name||USER.displayName||'',email:USER.email||'',phone:S.profile.phone||'',updatedMs:Date.now(),
-    cycle:S.cycle,meds:S.meds,scans:S.scans.slice(-30),logs,
+    cycle:S.cycle,meds:S.meds,scans:S.scans.slice(-30),logs,lab:S.lab||null,
     period:{starts:P.starts.slice(-12),ends:P.ends,days:pdays,avgLen:ps.L,avgBleed:ps.B},
     preg:g.active?{lmp:g.lmp,vitals:(g.vitals||[]).slice(-40),contr:g.contr.filter(c=>c.s>Date.now()-864e5),kicks:g.kicks.slice(-10)}:null,
     files:(S.files||[]).map(f=>({title:f.title,cat:f.cat,date:f.date,cycle:f.cycle}))};
 }
 let shareT=null;
 function shareSync(){if(!USER||!DB||!S.care||!S.care.share||!CARE.doctors.length)return;clearTimeout(shareT);shareT=setTimeout(()=>{DB.collection('care').doc(USER.uid).set(shareSummary()).catch(()=>{})},1500)}
-async function genCode(){
+async function genCode(role){
   const A='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
   for(let k=0;k<5;k++){const c=[...Array(6)].map(()=>A[Math.floor(Math.random()*A.length)]).join('');
-    try{await DB.collection('links').doc(c).set({patientUid:USER.uid,name:S.profile.name||USER.displayName||'',exp:Date.now()+7*864e5,created:Date.now()});CARE.code={c,exp:Date.now()+7*864e5};S.care.lastCode=CARE.code;save();render();return}catch(e){}}
+    try{await DB.collection('links').doc(c).set({patientUid:USER.uid,name:S.profile.name||USER.displayName||'',exp:Date.now()+7*864e5,created:Date.now(),role:role||'doctor'});const cc={c,exp:Date.now()+7*864e5};if(role==='partner')S.care.lastPCode=cc;else S.care.lastCode=cc;save();render();return}catch(e){}}
   toast('Δεν ήταν δυνατή η δημιουργία κωδικού');
 }
 const DOC_URL=()=>location.origin+location.pathname.replace(/[^/]*$/,'')+'doctor.html';
@@ -1226,8 +1239,9 @@ function inboxItem(i){
   if(i.type==='scan')body=`<p class="small">${fmt(i.date)}: Δεξιά ${esc(i.right||'-')} · Αριστερά ${esc(i.left||'-')} mm · Ενδομήτριο ${esc(i.endo||'-')} mm${i.e2?' · E2 '+esc(i.e2):''}</p>${i.notes?`<p class="small"><b>Οδηγίες:</b> ${esc(i.notes)}</p>`:''}`;
   if(i.type==='appt')body=`<p class="small"><b>${esc(i.title)}</b>: ${fmtL(i.date)}${i.time?', '+esc(i.time):''}</p>`;
   if(i.type==='plan')body=`<p class="small">${[['trigger','Trigger'],['opu','Ωοληψία'],['transfer','Εμβρυομεταφορά'],['beta','β-hCG']].filter(([k])=>i[k]).map(([k,l])=>l+': <b>'+(k==='trigger'?fmtDT(i[k]):fmtL(i[k]))+'</b>').join('<br>')}</p>`;
-  if(i.type==='msg')body=`<p>${esc(i.text).replace(/\n/g,'<br>')}</p>`;
-  const can=['meds','scan','appt','plan'].includes(i.type);
+  if(i.type==='msg'||i.type==='cheer')body=`<p${i.type==='cheer'?' style="font-size:1.1rem"':''}>${esc(i.text).replace(/\n/g,'<br>')}</p>`;
+  if(i.type==='lab')body=`<p class="small">${[['eggs','Ωάρια'],['mii','Ώριμα'],['fert','Γονιμοποιήθηκαν'],['d3','Έμβρυα 3ης'],['blast','Βλαστοκύστες'],['frozen','Κατεψυγμένα'],['euploid','Ευπλοειδή']].filter(([k])=>i[k]!==''&&i[k]!=null).map(([k,l])=>l+': <b>'+esc(i[k])+'</b>').join(' · ')}</p>${i.text?`<p class="small">${esc(i.text)}</p>`:''}`;
+  const can=['meds','scan','appt','plan','lab'].includes(i.type);
   return `<div class="card inb ${i.read?'':'unread'}"><div class="row between"><b>${INBOX_T[i.type]||'Μήνυμα'}</b><span class="small muted">${esc(i.fromName||'')} · ${when}</span></div>${body}
    <div class="row" style="margin-top:8px">${can?(i.imported?'<span class="pill">✓ Προστέθηκε</span>':`<button class="btn sm" data-a="inbimport" data-id="${i.id}">Πρόσθεσε στην εφαρμογή μου</button>`):''}${i.read?'':`<button class="btn alt sm" data-a="inbread" data-id="${i.id}">Το είδα</button>`}</div></div>`;
 }
@@ -1237,6 +1251,7 @@ async function inboxImport(id){
   if(i.type==='scan')S.scans.push({id:uid(),date:i.date,right:i.right||'',left:i.left||'',endo:i.endo||'',e2:i.e2||'',notes:i.notes||''});
   if(i.type==='appt'){S.cycle.appointments=S.cycle.appointments||[];S.cycle.appointments.push({id:uid(),title:i.title,date:i.date,time:i.time||''})}
   if(i.type==='plan')['trigger','opu','transfer','beta'].forEach(k=>{if(i[k])S.cycle[k]=i[k]});
+  if(i.type==='lab'){const L=LAB();let r=labCur();if(!r){r={id:uid(),opu:S.cycle.opu||today(),method:'',blasts:[],updates:[]};L.recs.push(r);L.cur=r.id}['eggs','mii','fert','d3','blast','euploid','frozen'].forEach(k=>{if(i[k]!==''&&i[k]!=null)r[k]=i[k]});r.updates=r.updates||[];r.updates.push({date:today(),text:i.text||'Ενημέρωση αριθμών',from:i.fromName||''})}
   save();try{await DB.collection('care').doc(USER.uid).collection('inbox').doc(id).update({imported:true,read:true})}catch(e){}
   toast('Προστέθηκε ✓');
 }
@@ -1252,7 +1267,7 @@ V.care=()=>{
       <p class="small muted" style="margin-top:8px">Ο γιατρός ανοίγει την πύλη γιατρών, συνδέεται με Google και βάζει τον κωδικό.</p>`:`<p>Δημιούργησε έναν κωδικό μίας χρήσης και δώσ' τον στον γυναικολόγο σου.</p><button class="btn coral" data-a="gencode">Δημιουργία κωδικού</button>`}
    </div>
    <div class="card"><h2>Συνδεδεμένοι γιατροί</h2>
-    ${CARE.doctors.length?CARE.doctors.map(d=>`<div class="item"><span><b>${esc(d.name||'Γιατρός')}</b><br><span class="small muted">${esc(d.email||'')} · από ${fmt(ymd(new Date(d.created||Date.now())))}</span></span><button class="btn ghost" data-a="docrevoke" data-id="${d.id}">Αφαίρεση</button></div>`).join(''):'<p class="muted small">Κανένας ακόμη.</p>'}
+    ${CARE.doctors.filter(d=>d.role!=='partner').length?CARE.doctors.filter(d=>d.role!=='partner').map(d=>`<div class="item"><span><b>${esc(d.name||'Γιατρός')}</b><br><span class="small muted">${esc(d.email||'')} · από ${fmt(ymd(new Date(d.created||Date.now())))}</span></span><button class="btn ghost" data-a="docrevoke" data-id="${d.id}">Αφαίρεση</button></div>`).join(''):'<p class="muted small">Κανένας ακόμη.</p>'}
     <label class="row" style="margin-top:12px;font-weight:500;gap:8px;flex-wrap:nowrap"><input type="checkbox" data-a="careshare" ${S.care.share?'checked':''} style="width:auto"> Ο γιατρός μου βλέπει τις καταγραφές μου (κύκλος, φάρμακα, υπέρηχοι, συμπτώματα, περίοδος, εγκυμοσύνη)</label>
     <p class="small muted">Το προσωπικό ημερολόγιο σκέψεων και οι ασκήσεις του Psy Coach δεν μοιράζονται ποτέ.</p>
    </div>
@@ -1466,12 +1481,141 @@ V.terms=()=>`<h1>Όροι χρήσης</h1><div class="card legal">
  <h3>5. Αλλαγές</h3><p>Οι όροι μπορεί να ενημερώνονται. Θα βλέπεις την ημερομηνία τελευταίας ενημέρωσης σε αυτή τη σελίδα.</p>
  <h3>6. Επικοινωνία</h3><p><a href="mailto:${OWNER.email}">${OWNER.email}</a></p></div>`;
 
+/* ---------- Τα έμβρυά μου ---------- */
+function LAB(){S.lab=S.lab||{cur:null,recs:[]};return S.lab}
+function labCur(){const L=LAB();return L.recs.find(r=>r.id===L.cur)||L.recs[L.recs.length-1]||null}
+const LABDAYS=[
+ ['Ημέρα 0','Ωοληψία','Τα ωάρια συλλέγονται και ο εμβρυολόγος ελέγχει ποια είναι ώριμα. Λίγες ώρες μετά γίνεται η γονιμοποίηση (IVF ή ICSI).'],
+ ['Ημέρα 1','Γονιμοποίηση','Περίπου 16 έως 18 ώρες μετά, ο εμβρυολόγος ψάχνει 2 προπυρήνες (2PN), το σημάδι φυσιολογικής γονιμοποίησης. Συνήθως είναι το πρώτο τηλεφώνημα.'],
+ ['Ημέρα 2','2 έως 4 κύτταρα','Τα έμβρυα αρχίζουν να διαιρούνται. Πολλά εργαστήρια δεν δίνουν νέα αυτή τη μέρα, και αυτό είναι φυσιολογικό.'],
+ ['Ημέρα 3','6 έως 8 κύτταρα','Αξιολογείται ο αριθμός και η ομοιομορφία των κυττάρων. Κάποιες κλινικές κάνουν εμβρυομεταφορά 3ης ημέρας.'],
+ ['Ημέρα 4','Μοριδίδιο','Τα κύτταρα «σφίγγουν» μεταξύ τους. Είναι μια ήσυχη μέρα, συχνά χωρίς ενημέρωση.'],
+ ['Ημέρα 5','Βλαστοκύστη','Σχηματίζεται κοιλότητα, η εσωτερική κυτταρική μάζα (το μελλοντικό έμβρυο) και η τροφοβλάστη (ο μελλοντικός πλακούντας). Γίνεται μεταφορά, βιοψία PGT ή κατάψυξη (υαλοποίηση).'],
+ ['Ημέρα 6','Βλαστοκύστες 6ης ημέρας','Κάποια έμβρυα χρειάζονται μια μέρα ακόμα. Οι βλαστοκύστες 6ης ημέρας μπορούν επίσης να δώσουν υγιείς εγκυμοσύνες.'],
+ ['Ημέρα 7','Τελευταίος έλεγχος','Σπανιότερα, κάποια εργαστήρια αξιολογούν και καταψύχουν βλαστοκύστες 7ης ημέρας.']];
+const EXP=['','πρώιμη βλαστοκύστη','βλαστοκύστη','πλήρης βλαστοκύστη','διευρυμένη βλαστοκύστη','εκκολαπτόμενη','εκκολαφθείσα'];
+const ICM={A:'πολλά, σφιχτά κύτταρα',B:'αρκετά, πιο χαλαρά κύτταρα',C:'λίγα κύτταρα'},TE={A:'πολλά κύτταρα σε συνεκτική στιβάδα',B:'λιγότερα κύτταρα',C:'πολύ λίγα κύτταρα'};
+function gradeTxt(g){const m=/^([1-6])\s*([ABC])\s*([ABC])$/i.exec((g||'').trim());if(!m)return '';const [,e,i,t]=m;return `${e}: ${EXP[+e]} · ${i.toUpperCase()}: εσωτερική μάζα με ${ICM[i.toUpperCase()]} · ${t.toUpperCase()}: τροφοβλάστη με ${TE[t.toUpperCase()]}`}
+const PGT={na:'Χωρίς PGT',pend:'⏳ Αναμένεται',eup:'✅ Ευπλοειδές',mos:'🟡 Μωσαϊκό',ane:'❌ Ανευπλοειδές',nr:'Χωρίς αποτέλεσμα'};
+const BST={frozen:'❄️ Κατεψυγμένη',transferred:'💜 Μεταφέρθηκε',culture:'🔬 Σε καλλιέργεια',discarded:'Δεν συνεχίστηκε'};
+function funnel(r){
+  const steps=[['eggs','Ωάρια'],['mii','Ώριμα (MII)'],['fert','Γονιμοποιήθηκαν (2PN)'],['d3','Έμβρυα 3ης ημέρας'],['blast','Βλαστοκύστες'],['euploid','Ευπλοειδή (PGT)']].filter(([k])=>r[k]!==''&&r[k]!=null);
+  const max=Math.max(1,+r.eggs||0,...steps.map(([k])=>+r[k]||0));
+  return `<div class="funnel">${steps.map(([k,l],i)=>`<div class="fstep" style="--w:${Math.max(8,(+r[k]||0)/max*100)}%;--d:${i*120}ms"><span class="fbar"><b>${r[k]}</b></span><span class="small">${l}</span></div>`).join('')||'<p class="muted small">Συμπλήρωσε τους αριθμούς όταν σου τους πει το εργαστήριο.</p>'}</div>`;
+}
+V.embryo=()=>{
+  const L=LAB(),r=L._new?null:labCur();
+  if(!r)return `<h1>Τα έμβρυά μου</h1><div class="grid g2"><div class="card coachHero"><span class="pill">🧬 Εργαστήριο</span><h2 style="margin-top:10px">Η πιο αγχωτική αναμονή, πιο κατανοητή</h2><p>Κατέγραψε τι σου λέει ο εμβρυολόγος κάθε μέρα: ωάρια, γονιμοποίηση, έμβρυα, βλαστοκύστες, PGT. Θα βλέπεις την πορεία τους και θα καταλαβαίνεις τι σημαίνει κάθε αριθμός.</p></div>
+   <div class="card"><form data-form="labnew"><label>Ημερομηνία ωοληψίας</label><input type="date" name="opu" value="${S.cycle.opu||today()}" required><label>Μέθοδος</label><select name="method"><option>ICSI</option><option>IVF</option><option>IVF και ICSI</option></select><button class="btn coral" style="margin-top:12px">Ξεκινάμε</button></form></div></div>`;
+  const day=Math.max(0,Math.min(7,days(r.opu,today())));
+  return `<div class="row between"><h1 style="margin:0">Τα έμβρυά μου</h1><div class="row">${L.recs.length>1?`<select data-a="labsel" style="width:auto">${L.recs.map(x=>`<option value="${x.id}" ${x.id===r.id?'selected':''}>Ωοληψία ${fmt(x.opu)}</option>`).join('')}</select>`:''}<button class="btn ghost" data-a="labnewc">+ Νέα ωοληψία</button></div></div>
+  <div class="grid g2" style="margin-top:14px">
+   <div class="card"><div class="row between"><h2 style="margin:0">Από τα ωάρια στα έμβρυα</h2><span class="pill lilac">${esc(r.method||'')}</span></div>${funnel(r)}
+    <p class="small muted" style="margin-top:10px">Ενδεικτικά, περίπου 3 στα 4 ωάρια είναι ώριμα, περίπου 7 στα 10 ώριμα γονιμοποιούνται και περίπου τα μισά γονιμοποιημένα φτάνουν σε βλαστοκύστη. Η «χοάνη» στενεύει σε κάθε κύκλο: είναι η φυσική διαδικασία επιλογής, όχι αποτυχία.</p></div>
+   <div class="card"><h2>Πού βρισκόμαστε: ${LABDAYS[day][0]}</h2><ul class="timeline">${LABDAYS.map(([d,t,x],i)=>`<li class="${i<day?'past':i===day?'now':''}"><span class="dot"></span><h3>${d} · ${t}</h3>${i===day||i===day+1?`<p class="small">${x}</p>`:''}</li>`).join('')}</ul></div>
+  </div>
+  <div class="grid g2" style="margin-top:16px">
+   <div class="card"><h2>Οι αριθμοί</h2><form data-form="labnum"><div class="fields two">${[['eggs','Ωάρια'],['mii','Ώριμα (MII)'],['fert','Γονιμοποιήθηκαν (2PN)'],['d3','Έμβρυα 3ης ημέρας'],['blast','Βλαστοκύστες'],['euploid','Ευπλοειδή (PGT)']].map(([k,l])=>`<div><label>${l}</label><input type="number" min="0" name="${k}" value="${r[k]??''}"></div>`).join('')}</div><button class="btn sm" style="margin-top:10px">Αποθήκευση</button></form></div>
+   <div class="card"><h2>Οι βλαστοκύστες μου</h2>
+    ${(r.blasts||[]).map(b=>`<div class="item"><span><b>${b.day}ης ημέρας · ${esc(b.grade||'χωρίς βαθμό')}</b> <span class="small">${PGT[b.pgt]||''} · ${BST[b.status]||''}</span>${gradeTxt(b.grade)?`<br><span class="small muted">${gradeTxt(b.grade)}</span>`:''}</span><button class="btn ghost" data-a="bldel" data-id="${b.id}">✕</button></div>`).join('')||'<p class="muted small">Καμία ακόμη.</p>'}
+    <form data-form="blast" class="fields two" style="margin-top:8px"><div><label>Ημέρα</label><select name="day"><option>5</option><option>6</option><option>7</option></select></div><div><label>Βαθμός (π.χ. 4AA)</label><input name="grade" placeholder="4AB"></div><div><label>PGT-A</label><select name="pgt">${Object.entries(PGT).map(([k,v])=>`<option value="${k}">${v}</option>`).join('')}</select></div><div><label>Κατάσταση</label><select name="status">${Object.entries(BST).map(([k,v])=>`<option value="${k}">${v}</option>`).join('')}</select></div><div><button class="btn alt sm">+ Βλαστοκύστη</button></div></form>
+    <details style="margin-top:10px"><summary>Τι σημαίνει ο βαθμός (π.χ. 4AA);</summary><div class="inner small"><p>Η βαθμολόγηση (Gardner) έχει 3 μέρη: ο <b>αριθμός 1 έως 6</b> δείχνει πόσο έχει αναπτυχθεί η βλαστοκύστη, το <b>πρώτο γράμμα</b> την εσωτερική κυτταρική μάζα (το μελλοντικό έμβρυο) και το <b>δεύτερο γράμμα</b> την τροφοβλάστη (τον μελλοντικό πλακούντα). Το Α είναι το καλύτερο.</p><p>Η βαθμολογία περιγράφει μόνο την εμφάνιση στο μικροσκόπιο. Βλαστοκύστες με χαμηλότερο βαθμό δίνουν επίσης υγιείς εγκυμοσύνες.</p></div></details></div>
+  </div>
+  <div class="grid g2" style="margin-top:16px">
+   <div class="card"><h2>Τι μου είπε το εργαστήριο</h2><form data-form="labupd" class="row"><input name="text" placeholder="π.χ. 5 γονιμοποιήθηκαν φυσιολογικά" required style="flex:1"><button class="btn sm">+</button></form>
+    <div class="list" style="margin-top:10px">${(r.updates||[]).slice().reverse().map(u=>`<div class="item small"><span><b>${fmt(u.date)}</b> ${esc(u.text)}</span>${u.from?`<span class="pill">από ${esc(u.from)}</span>`:''}</div>`).join('')||'<p class="muted small">Σημείωσε κάθε ενημέρωση για να μην ξεχνάς.</p>'}</div></div>
+   <div class="card soft"><h3>💜 Η αναμονή των τηλεφωνημάτων</h3><p class="small">Η αναμονή για τα νέα του εργαστηρίου είναι από τις πιο δύσκολες στιγμές. Δοκίμασε τον <a href="#coach/me">«χρόνο ανησυχίας»</a> και, ως ζευγάρι, το <a href="#coach/couple">«Μιλάω, ακούς»</a>.</p><p class="small"><b>Ερωτήσεις για τον εμβρυολόγο:</b> Πώς πάνε τα έμβρυα σε σχέση με την ηλικία μου; Πότε θα γίνει μεταφορά ή κατάψυξη; Πόσα θα καταψυχθούν;</p></div>
+  </div>`;
+};
+
+/* ---------- Χάρτης ενέσεων ---------- */
+const ZONES=[['RUA','πάνω δεξιά κοιλιά',115,128],['LUA','πάνω αριστερά κοιλιά',185,128],['RLA','κάτω δεξιά κοιλιά',115,188],['LLA','κάτω αριστερά κοιλιά',185,188],['RS','δεξί πλάι κοιλιάς',78,158],['LS','αριστερό πλάι κοιλιάς',222,158],['RT','δεξιός μηρός',118,300],['LT','αριστερός μηρός',182,300]];
+function injLast(z){const L=(S.inj||[]).filter(i=>i.zone===z);return L.length?Math.max(...L.map(i=>i.t)):0}
+function injSuggest(){return ZONES.slice(0,6).slice().sort((a,b)=>injLast(a[0])-injLast(b[0]))[0]}
+function injMap(clickAct){
+  const sug=injSuggest()[0],now=Date.now();
+  return `<svg viewBox="0 0 300 380" class="injmap"><path d="M90 40 Q150 20 210 40 L232 120 Q240 180 228 230 L72 230 Q60 180 68 120Z" fill="var(--coral-soft)" stroke="var(--line)" stroke-width="2"/>
+   <path d="M76 232 L146 232 L140 370 L96 370Z M154 232 L224 232 L204 370 L160 370Z" fill="var(--coral-soft)" stroke="var(--line)" stroke-width="2"/>
+   <circle cx="150" cy="158" r="5" fill="var(--muted)"/><text x="150" y="150" text-anchor="middle" font-size="10" fill="var(--muted)">αφαλός</text>
+   <circle cx="150" cy="158" r="34" fill="none" stroke="var(--muted)" stroke-dasharray="3 4" opacity=".6"/>
+   ${ZONES.map(([id,l,x,y])=>{const h=(now-injLast(id))/36e5;const col=!injLast(id)?'#8fd1c8':h<24?'#e9775a':h<72?'#e7b85a':'#8fd1c8';return `<g ${clickAct?`data-a="${clickAct}" data-z="${id}"`:''} style="cursor:${clickAct?'pointer':'default'}"><circle cx="${x}" cy="${y}" r="17" fill="${col}" stroke="#fff" stroke-width="3" class="${id===sug?'zsug':''}"/><title>${l}</title></g>`}).join('')}
+   <text x="20" y="20" font-size="11" fill="var(--muted)">Δεξιά σου</text><text x="280" y="20" font-size="11" fill="var(--muted)" text-anchor="end">Αριστερά σου</text></svg>
+   <div class="row small" style="gap:10px;justify-content:center"><span><i class="lg" style="background:#e9775a"></i>τελευταίες 24 ώρες</span><span><i class="lg" style="background:#e7b85a"></i>1 έως 3 ημέρες</span><span><i class="lg" style="background:#8fd1c8"></i>διαθέσιμο</span></div>`;
+}
+function injCard(){const s=injSuggest();const last=(S.inj||[]).slice(-5).reverse();
+  return `<div class="card"><h2>📍 Χάρτης ενέσεων</h2><p class="small">Επόμενο προτεινόμενο σημείο: <b>${s[1]}</b>. Πάτα ένα σημείο για να καταγράψεις ένεση τώρα.</p>${injMap('injlog')}
+   ${last.length?`<div class="list" style="margin-top:8px">${last.map(i=>{const d=new Date(i.t);return `<div class="item small"><span>${fmt(ymd(d))} ${pad(d.getHours())}:${pad(d.getMinutes())} · ${(ZONES.find(z=>z[0]===i.zone)||[])[1]}${i.med?' · '+esc(i.med):''}</span><button class="btn ghost" data-a="injdel" data-t="${i.t}">✕</button></div>`}).join('')}</div>`:''}
+   <p class="small muted">Η εναλλαγή σημείων μειώνει τον πόνο, τους μώλωπες και τη σκλήρυνση του δέρματος. Μείνε περίπου 5 εκ. μακριά από τον αφαλό.</p></div>`}
+function injPick(med){
+  const m=document.createElement('div');m.className='modal';
+  m.innerHTML=`<div class="card"><div class="row between"><h2 style="margin:0">Πού έκανες την ένεση;</h2><button class="btn ghost" data-a="mclose">✕</button></div><p class="small muted">${esc(med)} · Προτεινόμενο: <b>${injSuggest()[1]}</b></p>${injMap('injpick')}<button class="btn ghost" data-a="mclose" style="margin-top:6px">Παράλειψη</button></div>`;
+  m.dataset.med=med;document.body.appendChild(m);
+}
+
+/* ---------- Σύντροφος ---------- */
+const PARTNER_PH=[
+ ['pre','Πριν ξεκινήσει η θεραπεία',['Μάθε το πρόγραμμα: ποιες μέρες είναι οι ενέσεις και τα ραντεβού.','Αν χρειαστεί σπερμοδιάγραμμα, ρώτα το εργαστήριο πόσες μέρες αποχής θέλουν.','Κόψε το κάπνισμα, περιόρισε το αλκοόλ, απόφυγε σάουνα και πολύ ζεστά μπάνια.']],
+ ['stim','Ενέσεις και υπερηχογραφήματα',['Προσφέρσου να κάνεις ή να ετοιμάζεις τις ενέσεις.','Έλα στα ραντεβού όσο μπορείς.','Ανάλαβε περισσότερα από τα καθημερινά (μαγείρεμα, ψώνια).']],
+ ['post','Trigger και ωοληψία',['Το δείγμα σπέρματος δίνεται συνήθως την ημέρα της ωοληψίας: ακολούθησε τις οδηγίες του εργαστηρίου για τις μέρες αποχής (συνήθως 2 έως 5).','Εκείνη την ημέρα θα χρειαστεί να την πας και να τη φέρεις: δεν μπορεί να οδηγήσει μετά τη μέθη.']],
+ ['lab','Αναμονή για τα έμβρυα',['Τα τηλεφωνήματα του εργαστηρίου είναι αγχωτικά: φρόντισε να είσαι εκεί ή να τα μάθετε μαζί.','Μιλήστε για ό,τι νιώθετε, χωρίς να βιαστείς να «λύσεις» το πρόβλημα.']],
+ ['tww','Οι 2 εβδομάδες αναμονής',['Σχεδιάστε μικρές ευχάριστες δραστηριότητες.','Συμφωνήστε μαζί πώς θα μάθετε το αποτέλεσμα.','Θυμήσου: και εσύ έχεις δικαίωμα να ανησυχείς και να ζητάς στήριξη.']],
+ ['beta','Ημέρα αποτελέσματος',['Ό,τι κι αν δείξει, να είστε μαζί.','Μην αποφασίσετε για τα επόμενα βήματα την ίδια μέρα.']]];
+const SEMEN=[['Όγκος','1,4 ml'],['Συγκέντρωση','16 εκατ./ml'],['Συνολικός αριθμός','39 εκατ.'],['Συνολική κινητικότητα','42%'],['Προωθητική κινητικότητα','30%'],['Φυσιολογική μορφολογία','4%']];
+const CHEERS=['Είμαι περήφανος/η για σένα 💜','Σε σκέφτομαι συνέχεια','Απόψε μαγειρεύω εγώ 🍝','Είμαστε ομάδα, ό,τι κι αν γίνει','Ήσουν πολύ γενναία σήμερα'];
+let PSUM=null,PSUMt=0;
+async function partnerLoad(force){const p=S.partnerOf;if(!p||!USER||!DB)return;if(!force&&PSUM&&Date.now()-PSUMt<60000)return;try{const s=await DB.collection('care').doc(p.pid).get();PSUM=s.exists?s.data():{};}catch(e){PSUM={denied:true}}PSUMt=Date.now();if(route().split('/')[0]==='partner')render()}
+function pPhase(c){const t=today();if(!c||!c.start)return 'pre';if(c.beta&&t>=c.beta)return 'beta';if(c.transfer&&t>=c.transfer)return 'tww';if(c.opu&&t>=c.opu)return 'lab';if(c.trigger&&new Date()>=new Date(c.trigger))return 'post';if(t>=c.start)return 'stim';return 'pre'}
+async function partnerJoin(code){
+  code=(code||'').trim().toUpperCase();if(code.length!==6){toast('Ο κωδικός έχει 6 χαρακτήρες');return}
+  try{const l=await DB.collection('links').doc(code).get();if(!l.exists){toast('Ο κωδικός δεν βρέθηκε');return}const d=l.data();if(d.exp<Date.now()){toast('Ο κωδικός έληξε');return}
+    if(d.patientUid===USER.uid){toast('Αυτός είναι ο δικός σου κωδικός: δώσ\' τον στον σύντροφό σου');return}
+    await DB.collection('care').doc(d.patientUid).collection('doctors').doc(USER.uid).set({code,name:USER.displayName||'',email:USER.email||'',created:Date.now(),role:'partner'});
+    S.partnerOf={pid:d.patientUid,name:d.name||''};save();toast('Συνδεθήκατε 💜');PSUM=null;partnerLoad(true)}catch(e){toast('Η σύνδεση απέτυχε')}
+}
+V.partner=()=>{
+  S.care=S.care||{share:true};
+  if(!USER)return `<h1>Σύντροφος</h1><div class="grid g2"><div class="card pgHero"><span class="pill">👫 Μαζί</span><h2 style="margin-top:10px">Η θεραπεία γίνεται από δύο</h2><p>Ο/η σύντροφος βλέπει τον κύκλο, τα ραντεβού και τα νέα του εργαστηρίου, παίρνει υπενθυμίσεις για τον ρόλο του/της και στέλνει μηνύματα στήριξης.</p></div><div class="card"><p>Χρειάζεται σύνδεση με Google και από τους δύο.</p><button class="btn gbtn" data-a="signin">${G_IC} Σύνδεση με Google</button></div></div>`;
+  if(S.partnerOf){
+    if(!PSUM)partnerLoad();const s=PSUM||{};const nm=esc(S.partnerOf.name||s.name||'η σύντροφός σου');
+    if(PSUM&&(PSUM.denied||!PSUM.updatedMs))return `<h1>Σύντροφος</h1><div class="card"><p>${PSUM.denied?'Δεν υπάρχει πλέον πρόσβαση: ίσως αφαιρέθηκε η σύνδεση.':'Η '+nm+' πρέπει να ενεργοποιήσει «Ο γιατρός μου βλέπει τις καταγραφές μου» στην καρτέλα «Ο γιατρός μου», ώστε να βλέπεις τον κύκλο.'}</p><div class="row"><button class="btn alt sm" data-a="pload">↻ Ανανέωση</button><button class="btn ghost" data-a="pleave">Αποσύνδεση από τον λογαριασμό της</button></div></div>`;
+    const c=s.cycle||{},ph=pPhase(c),P=PARTNER_PH.find(x=>x[0]===ph)||PARTNER_PH[0];const t=today();
+    const appts=(c.appointments||[]).filter(a=>a.date>=t).sort((a,b)=>(a.date+a.time).localeCompare(b.date+b.time)).slice(0,3);
+    const keyd=[['trigger','Trigger'],['opu','Ωοληψία'],['transfer','Εμβρυομεταφορά'],['beta','β-hCG']].filter(([k])=>c[k]&&(k==='trigger'?c[k].slice(0,10):c[k])>=t);
+    const meds=(s.meds||[]).filter(m=>(!m.start||m.start<=t)&&(!m.end||m.end>=t));
+    const lr=s.lab&&s.lab.recs&&s.lab.recs[s.lab.recs.length-1];
+    return `<div class="row between"><h1 style="margin:0">Μαζί με ${nm}</h1><button class="btn ghost" data-a="pload">↻</button></div>
+    <div class="grid g2" style="margin-top:14px">
+     <div class="card pgHero"><span class="pill">👫 Φάση</span><h2 style="margin-top:10px">${P[1]}</h2><ul class="small">${P[2].map(x=>`<li style="margin:4px 0">${x}</li>`).join('')}</ul></div>
+     <div class="card"><h2>Επόμενα</h2>${keyd.map(([k,l])=>`<p style="margin:4px 0">${l}: <b>${k==='trigger'?fmtDT(c[k]):fmtL(c[k])}</b></p>`).join('')}${appts.map(a=>`<p style="margin:4px 0">📅 ${fmtL(a.date)}${a.time?', '+esc(a.time):''}: ${esc(a.title)}</p>`).join('')}${!keyd.length&&!appts.length?'<p class="muted small">Δεν υπάρχουν προγραμματισμένα.</p>':''}
+      ${meds.length?`<h3 style="margin-top:12px">Φάρμακα σήμερα</h3>${meds.map(m=>`<p class="small" style="margin:3px 0">💊 <b>${esc(m.name)}</b> ${esc(m.dose||'')} · ${esc(m.times||'')}</p>`).join('')}`:''}</div>
+    </div>
+    <div class="grid g2" style="margin-top:16px">
+     <div class="card"><h2>💌 Στείλε της ένα μήνυμα</h2><div class="chips">${CHEERS.map(x=>`<button class="chip" data-a="cheer" data-t="${esc(x)}">${x}</button>`).join('')}</div><form data-form="cheer" class="row" style="margin-top:10px"><input name="text" placeholder="Γράψε κάτι δικό σου…" required style="flex:1"><button class="btn sm">Αποστολή</button></form></div>
+     <div class="card">${lr?`<h2>🧬 Τα έμβρυα</h2>${funnel(lr)}`:'<h2>💜 Για το ζευγάρι</h2><p class="small">Κάντε μαζί τις ασκήσεις του Psy Coach.</p>'}<a class="btn alt sm" href="#coach/couple" style="margin-top:8px">Ασκήσεις ζευγαριού</a></div>
+    </div>
+    <div class="card soft" style="margin-top:16px"><h2>🧑 Ο ανδρικός παράγοντας</h2><p class="small">Περίπου στο ένα τρίτο έως τη μισή περίπτωση υπογονιμότητας συμβάλλει και ο ανδρικός παράγοντας. Ο τρόπος ζωής επηρεάζει την ποιότητα του σπέρματος, που ανανεώνεται κάθε περίπου 2 με 3 μήνες.</p>
+      <details><summary>Κατώτερα όρια αναφοράς σπερμοδιαγράμματος (ΠΟΥ 2021)</summary><div class="inner"><table>${SEMEN.map(([a,b])=>`<tr><td>${a}</td><td><b>${b}</b></td></tr>`).join('')}</table><p class="small muted">Τιμές κάτω από αυτά τα όρια δεν σημαίνουν από μόνες τους υπογονιμότητα. Την ερμηνεία την κάνει ο γιατρός.</p></div></details>
+      <p class="small" style="margin-top:8px"><b>Βοηθούν:</b> διακοπή καπνίσματος, λιγότερο αλκοόλ, φυσιολογικό βάρος, άσκηση, αποφυγή υψηλής θερμοκρασίας στους όρχεις (σάουνα, laptop στα πόδια).</p></div>
+    <p style="margin-top:12px"><button class="btn ghost" data-a="pleave">Αποσύνδεση από τον λογαριασμό της</button></p>`;
+  }
+  const partners=CARE.doctors.filter(d=>d.role==='partner');const lc=S.care.lastPCode&&S.care.lastPCode.exp>Date.now()?S.care.lastPCode:null;
+  return `<h1>Σύντροφος</h1><div class="grid g2">
+   <div class="card"><h2>Πρόσκληση συντρόφου</h2><p class="small">Αν κάνεις τη θεραπεία, δώσε αυτόν τον κωδικό στον/στη σύντροφό σου.</p>
+    ${lc?`<div class="codebox">${lc.c}</div><div class="row" style="justify-content:center"><button class="btn alt sm" data-a="pcodeshare">📤 Αποστολή</button><button class="btn ghost" data-a="pgencode">Νέος κωδικός</button></div>`:'<button class="btn coral" data-a="pgencode">Δημιουργία κωδικού</button>'}
+    ${partners.length?`<h3 style="margin-top:14px">Συνδεδεμένοι</h3>${partners.map(d=>`<div class="item"><span><b>${esc(d.name)}</b><br><span class="small muted">${esc(d.email||'')}</span></span><button class="btn ghost" data-a="docrevoke" data-id="${d.id}">Αφαίρεση</button></div>`).join('')}`:''}
+    <p class="small muted" style="margin-top:8px">Ο/η σύντροφος βλέπει κύκλο, ραντεβού, φάρμακα και έμβρυα, αν είναι ενεργή η κοινοποίηση στο «Ο γιατρός μου». Το προσωπικό ημερολόγιο σκέψεων δεν μοιράζεται ποτέ.</p></div>
+   <div class="card"><h2>Είμαι ο/η σύντροφος</h2><p class="small">Βάλε τον κωδικό που σου έδωσε η σύντροφός σου από τη δική της εφαρμογή.</p><form data-form="pjoin" class="row"><input name="code" maxlength="6" style="text-transform:uppercase;letter-spacing:.2em;font-weight:700;flex:1" required><button class="btn">Σύνδεση</button></form></div>
+  </div>`;
+};
+
+async function partnerSend(text){const p=S.partnerOf;if(!p||!text)return;try{await DB.collection('care').doc(p.pid).collection('inbox').add({type:'cheer',text,from:USER.uid,fromName:USER.displayName||'Ο/η σύντροφός σου',created:Date.now(),read:false});toast('Στάλθηκε 💌')}catch(e){toast('Δεν στάλθηκε')}}
+
 /* ---------- Events ---------- */
 let breathTimer=null;
 function stopBreath(){clearInterval(breathTimer);breathTimer=null;const b=$('#breath');if(b){b.classList.remove('in');b.textContent='Έτοιμη;'}}
 document.addEventListener('click',e=>{
   const el=e.target.closest('[data-a]');if(!el||el.tagName==='INPUT')return;const a=el.dataset.a;
-  if(a==='take'){const d=el.dataset.d;S.taken[d]=S.taken[d]||{};S.taken[d][el.dataset.k]=!S.taken[d][el.dataset.k];save();render();return}
+  if(a==='take'){const d=el.dataset.d;S.taken[d]=S.taken[d]||{};S.taken[d][el.dataset.k]=!S.taken[d][el.dataset.k];save();render();const mid=el.dataset.k.split('@')[0],md=S.meds.find(m=>m.id===mid);if(S.taken[d][el.dataset.k]&&md&&md.type==='inj')injPick(md.name);return}
   e.preventDefault();
   const L=d=>S.logs[d]=S.logs[d]||{symptoms:[],flags:[],mood:0,weight:'',notes:''};
   if(a==='sym'||a==='flag'){const l=L(el.dataset.d),arr=a==='sym'?(l.symptoms=l.symptoms||[]):(l.flags=l.flags||[]);const i=arr.indexOf(el.dataset.k);i<0?arr.push(el.dataset.k):arr.splice(i,1);save();render()}
@@ -1521,6 +1665,15 @@ document.addEventListener('click',e=>{
   if(a==='pgedit'){PG().active=false;save();render();return}
   if(a==='pgstop'){if(confirm('Να σταματήσει η παρακολούθηση εγκυμοσύνης; Τα δεδομένα δεν θα διαγραφούν.')){PG().active=false;PG().lmp='';save();location.hash='today'}return}
   if(a==='pgfromet'){const f=el.closest('form');f.lmp.value=el.dataset.v;f.edd.value='';toast('Υπολογίστηκε από την εμβρυομεταφορά');return}
+  if(a==='injlog'||a==='injpick'){const m=el.closest('.modal');S.inj=S.inj||[];S.inj.push({t:Date.now(),zone:el.dataset.z,med:m?m.dataset.med:''});save();if(m)m.remove();toast('Καταγράφηκε: '+(ZONES.find(z=>z[0]===el.dataset.z)||[])[1]);render();return}
+  if(a==='injdel'){S.inj=(S.inj||[]).filter(i=>String(i.t)!==el.dataset.t);save();render();return}
+  if(a==='labnewc'){LAB().cur=null;S.lab.recs.length&&(S.lab._new=true);render();return}
+  if(a==='bldel'){const r=labCur();r.blasts=r.blasts.filter(b=>b.id!==el.dataset.id);save();render();return}
+  if(a==='cheer'){partnerSend(el.dataset.t);return}
+  if(a==='pload'){PSUM=null;partnerLoad(true);return}
+  if(a==='pleave'){if(confirm('Αποσύνδεση από τον λογαριασμό της συντρόφου σου;')){const p=S.partnerOf;DB.collection('care').doc(p.pid).collection('doctors').doc(USER.uid).delete().catch(()=>{});S.partnerOf=null;PSUM=null;save();render()}return}
+  if(a==='pgencode'){genCode('partner');return}
+  if(a==='pcodeshare'){const c=S.care.lastPCode.c,t='Ο κωδικός μου για να συνδεθείς στο Baby O’Clock ως σύντροφος: '+c+'\n'+location.origin+location.pathname+'#partner';if(navigator.share)navigator.share({text:t}).catch(()=>{});else navigator.clipboard.writeText(t).then(()=>toast('Αντιγράφηκε'));return}
   if(a==='inbimport'){inboxImport(el.dataset.id);return}
   if(a==='inbread'){DB.collection('care').doc(USER.uid).collection('inbox').doc(el.dataset.id).update({read:true}).catch(()=>{});return}
   if(a==='gencode'){genCode();return}
@@ -1551,7 +1704,7 @@ document.addEventListener('click',e=>{
 });
 document.addEventListener('input',e=>{if(e.target.closest('form[data-form=report]'))refreshReport();if(e.target.dataset.a==='pscrub'){selDay=addDays(e.target.dataset.s,+e.target.value-1);const v=e.target.value;render();const r=document.querySelector('[data-a=pscrub]');if(r){r.value=v;r.focus()}}});
 document.addEventListener('click',e=>{const m=$('#amenu');if(m&&!m.hidden&&!e.target.closest('.acct'))m.hidden=true},true);
-document.addEventListener('change',e=>{if(e.target.dataset.a==='automail'){PG().autoMail=e.target.checked;save();}if(e.target.dataset.a==='careshare'){S.care.share=e.target.checked;save();if(S.care.share)shareSync();else if(USER)DB.collection('care').doc(USER.uid).delete().catch(()=>{});toast(S.care.share?'Ο γιατρός σου βλέπει τις καταγραφές σου':'Η κοινοποίηση σταμάτησε')}if(e.target.closest('form[data-form=report]'))refreshReport();
+document.addEventListener('change',e=>{if(e.target.dataset.a==='labsel'){LAB().cur=e.target.value;save();render();return}if(e.target.dataset.a==='automail'){PG().autoMail=e.target.checked;save();}if(e.target.dataset.a==='careshare'){S.care.share=e.target.checked;save();if(S.care.share)shareSync();else if(USER)DB.collection('care').doc(USER.uid).delete().catch(()=>{});toast(S.care.share?'Ο γιατρός σου βλέπει τις καταγραφές σου':'Η κοινοποίηση σταμάτησε')}if(e.target.closest('form[data-form=report]'))refreshReport();
   const el=e.target;
   if(el.dataset.a==='diarydate'&&el.value)location.hash='diary/'+el.value;
   if(el.dataset.a==='import'&&el.files[0]){const r=new FileReader();r.onload=()=>{try{S=Object.assign(structuredClone(blank),JSON.parse(r.result));save();render();toast('Η επαναφορά ολοκληρώθηκε')}catch(x){toast('Μη έγκυρο αρχείο')}};r.readAsText(el.files[0])}
@@ -1568,6 +1721,12 @@ document.addEventListener('submit',e=>{
   if(k==='record'){S.coach.records.push({id:uid(),date:today(),...v});save();toast('Αποθηκεύτηκε');render();const x=document.getElementById('ex-record');if(x)x.open=true;return}
   if(k==='checkin'){S.coach.checkins.push({id:uid(),date:today(),...v});toast('Το check-in αποθηκεύτηκε')}
   if(k==='report')return;
+  if(k==='labnew'){const L=LAB();const r={id:uid(),opu:v.opu,method:v.method,blasts:[],updates:[]};L.recs.push(r);L.cur=r.id;delete L._new;toast('Έτοιμο')}
+  if(k==='labnum'){const r=labCur();['eggs','mii','fert','d3','blast','euploid'].forEach(x=>r[x]=v[x]===''?'':+v[x]);toast('Αποθηκεύτηκε')}
+  if(k==='blast'){const r=labCur();r.blasts=r.blasts||[];r.blasts.push({id:uid(),day:v.day,grade:(v.grade||'').toUpperCase().replace(/\s/g,''),pgt:v.pgt,status:v.status})}
+  if(k==='labupd'){const r=labCur();r.updates=r.updates||[];r.updates.push({date:today(),text:v.text})}
+  if(k==='cheer'){partnerSend(v.text);f.reset();return}
+  if(k==='pjoin'){partnerJoin(v.code);return}
   if(k==='fileadd'){const file=f.f.files[0];if(!file)return;const st=$('#fstat');st.textContent='Επεξεργασία…';compressFile(file).then(async data=>{const meta={id:uid(),title:v.title||'',cat:v.cat,date:v.date||today(),cycle:v.cycle||curCycleLabel(),type:file.type==='application/pdf'?'pdf':'img',synced:false};await IDB.put({id:meta.id,data});S.files=S.files||[];S.files.push(meta);save();if(await fileUp(meta,data)){meta.synced=true;save()}toast('Αποθηκεύτηκε');render()}).catch(()=>{st.textContent='Το αρχείο είναι πολύ μεγάλο ή δεν υποστηρίζεται (PDF έως 700 KB).'});return}
   if(k==='wb'){const ans=[];const sc={};WB.forEach(([d,qs],di)=>{const a=qs.map((_,qi)=>+v['q'+di+'_'+qi]);ans.push(...a);sc[d]=Math.round(a.reduce((x,y)=>x+y,0)/a.length*25)});const total=Math.round(Object.values(sc).reduce((x,y)=>x+y,0)/4);S.coach.wb=S.coach.wb||[];S.coach.wb.push({date:today(),ans,sc,total});toast('Αποθηκεύτηκε')}
   if(k==='psybook'){S.clinic.psyEmail=v.email||S.clinic.psyEmail;save();const body='Καλησπέρα σας,\n\nθα ήθελα να κλείσω ραντεβού.\n\nΕίδος: '+v.who+'\nΤρόπος: '+v.mode+'\nΠροτιμώμενες ημέρες: '+(v.days||'-')+'\nΠροτιμώμενη ώρα: '+(v.hours||'-')+(v.note?'\n\n'+v.note:'')+'\n\n'+(S.profile.name||'')+(S.profile.phone?'\nΤηλ.: '+S.profile.phone:'')+'\n\n(μέσω της εφαρμογής Baby O’Clock)';location.href='mailto:'+encodeURIComponent(v.email||'')+'?subject='+encodeURIComponent('Αίτημα ραντεβού'+(S.profile.name?': '+S.profile.name:''))+'&body='+encodeURIComponent(body);return}
