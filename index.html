@@ -1657,6 +1657,7 @@ document.addEventListener('click',e=>{
   if(a==='bleon'){bleConnect();return}
   if(a==='bleoff'){try{BLE.dev&&BLE.dev.gatt.disconnect()}catch(x){}BLE.dev=null;render();return}
   if(a==='blesave'){bleSave();return}
+  if(a==='ahgo'){if(AH_FILE){el.disabled=true;el.textContent='Γίνεται καταχώρηση…';importAppleHealth(AH_FILE)}return}
   if(a==='caltoday'){calMonth=null;render();return}
   if(a==='bmetric'){bodyMetric=el.dataset.v;render();return}
   if(a==='bdemo'){bodyDemo();return}
@@ -1751,7 +1752,7 @@ document.addEventListener('click',e=>{
 });
 document.addEventListener('input',e=>{if(e.target.closest('form[data-form=report]'))refreshReport();if(e.target.dataset.a==='pscrub'){selDay=addDays(e.target.dataset.s,+e.target.value-1);const v=e.target.value;render();const r=document.querySelector('[data-a=pscrub]');if(r){r.value=v;r.focus()}}});
 const closeMenu=e=>{const m=$('#amenu');if(m&&!m.hidden&&(!e||!e.target.closest('.acct')))m.hidden=true};document.addEventListener('click',closeMenu,true);document.addEventListener('touchstart',closeMenu,{capture:true,passive:true});window.addEventListener('hashchange',()=>closeMenu());window.addEventListener('scroll',()=>closeMenu(),{passive:true});
-document.addEventListener('change',e=>{if(e.target.dataset.a==='ahimport'&&e.target.files[0]){importAppleHealth(e.target.files[0]);return}if(e.target.dataset.a==='labsel'){LAB().cur=e.target.value;save();render();return}if(e.target.dataset.a==='automail'){PG().autoMail=e.target.checked;save();}if(e.target.dataset.a==='careshare'){S.care.share=e.target.checked;save();if(S.care.share)shareSync();else if(USER)DB.collection('care').doc(USER.uid).delete().catch(()=>{});toast(S.care.share?'Ο γιατρός σου βλέπει τις καταγραφές σου':'Η κοινοποίηση σταμάτησε')}if(e.target.closest('form[data-form=report]'))refreshReport();
+document.addEventListener('change',e=>{if(e.target.dataset.a==='ahimport'&&e.target.files[0]){AH_FILE=e.target.files[0];const f=AH_FILE,box=$('#ahpick');if(box)box.innerHTML=`<div class="card soft" style="padding:12px;margin-top:10px"><p style="margin:0 0 8px">Επιλέχθηκε: <b>${esc(f.name)}</b> (${(f.size/1048576).toFixed(1)} MB)</p><button class="btn" data-a="ahgo">✅ Καταχώρηση</button></div>`;return}if(e.target.dataset.a==='labsel'){LAB().cur=e.target.value;save();render();return}if(e.target.dataset.a==='automail'){PG().autoMail=e.target.checked;save();}if(e.target.dataset.a==='careshare'){S.care.share=e.target.checked;save();if(S.care.share)shareSync();else if(USER)DB.collection('care').doc(USER.uid).delete().catch(()=>{});toast(S.care.share?'Ο γιατρός σου βλέπει τις καταγραφές σου':'Η κοινοποίηση σταμάτησε')}if(e.target.closest('form[data-form=report]'))refreshReport();
   const el=e.target;
   if(el.dataset.a==='diarydate'&&el.value)location.hash='diary/'+el.value;
   if(el.dataset.a==='import'&&el.files[0]){const r=new FileReader();r.onload=()=>{try{S=Object.assign(structuredClone(blank),JSON.parse(r.result));save();render();toast('Η επαναφορά ολοκληρώθηκε')}catch(x){toast('Μη έγκυρο αρχείο')}};r.readAsText(el.files[0])}
@@ -1896,9 +1897,10 @@ V.body=()=>{
      <p class="small muted" style="margin-top:8px">Οι βαθμολογίες (ανάκαμψη, φόρτος, ύπνος) υπολογίζονται από την εφαρμογή με βάση τον δικό σου μέσο όρο 30 ημερών. Δεν είναι οι αλγόριθμοι της Apple και δεν αποτελούν ιατρική μέτρηση.</p></div></div>
   </div>`;
 };
-V.body_import=()=>`<a href="#body" class="btn ghost">← Σώμα & Ανάκαμψη</a><h1>Εισαγωγή από Apple Health</h1>
- <div class="grid g2"><div class="card"><h2>Βήματα στο iPhone</h2><ol class="small"><li>Άνοιξε την εφαρμογή <b>Υγεία</b> → πάτα τη φωτογραφία σου πάνω δεξιά.</li><li><b>Εξαγωγή όλων των δεδομένων υγείας</b> → Εξαγωγή. Περίμενε λίγα λεπτά.</li><li>Πάτα <b>Αποθήκευση στα Αρχεία</b> για το <b>export.zip</b>.</li><li>Εδώ πάτα το κουμπί από κάτω και διάλεξε κατευθείαν το <b>export.zip</b>. <b>Δεν χρειάζεται να το ανοίξεις.</b></li></ol>
+V.body_import=()=>`<a href="#body" class="btn ghost">← Σώμα & Ανάκαμψη</a><h1>Εισαγωγή από Apple Health</h1><p class="small muted" style="margin-top:-6px">Έκδοση εισαγωγής 2 (με export.zip)</p>
+ <div class="grid g2"><div class="card"><h2>Βήματα στο iPhone</h2><ol class="small"><li>Άνοιξε την εφαρμογή <b>Υγεία</b> → πάτα τη φωτογραφία σου πάνω δεξιά.</li><li><b>Εξαγωγή όλων των δεδομένων υγείας</b> → Εξαγωγή. Περίμενε λίγα λεπτά.</li><li>Πάτα <b>Αποθήκευση στα Αρχεία</b> για το <b>export.zip</b>.</li><li>Εδώ πάτα το κουμπί από κάτω και διάλεξε κατευθείαν το <b>export.zip</b>. <b>Δεν χρειάζεται να το ανοίξεις.</b></li><li>Πάτα <b>✅ Καταχώρηση</b> και περίμενε να φτάσει στο 100%.</li></ol>
   <label class="btn" style="display:inline-flex;cursor:pointer">📂 Επιλογή export.zip<input type="file" data-a="ahimport" style="position:absolute;opacity:0;width:1px;height:1px"></label>
+  <div id="ahpick"></div>
   <p class="small muted" style="margin-top:6px">Αν το έχεις ήδη ανοίξει, μπες στον φάκελο <b>apple_health_export</b> και διάλεξε το αρχείο <b>export.xml</b> (όχι τον φάκελο).</p><div id="ahprog" class="small" style="margin-top:10px"></div></div>
   <div class="card soft"><h2>Τι εισάγεται (τελευταίοι 120 ημέρες)</h2><ul class="small"><li>HRV, παλμοί ηρεμίας, αναπνοές, SpO2</li><li>Θερμοκρασία καρπού στον ύπνο (Apple Watch Series 8 και νεότερα) ή βασική θερμοκρασία</li><li>Ύπνος με στάδια (βαθύς, REM, ελαφρύς, ξύπνια)</li><li>Βήματα, ενεργές θερμίδες, λεπτά άσκησης, προπονήσεις, VO2max</li><li>Πίεση</li><li>Ροή περιόδου, τεστ ωορρηξίας, τραχηλική βλέννη (στην καρτέλα Περίοδος)</li></ul><p class="small muted">Η επεξεργασία γίνεται μόνο μέσα στο κινητό σου. Το αρχείο δεν ανεβαίνει πουθενά. Το Apple Watch μετρά HRV ως SDNN: οι τιμές είναι συγκρίσιμες μόνο με τον δικό σου μέσο όρο, όχι με τιμές άλλων συσκευών.</p></div></div>`;
 
@@ -1910,6 +1912,7 @@ const AHW={Running:'Τρέξιμο',Walking:'Περπάτημα',Cycling:'Ποδ
 const ahD=x=>{const m=x.match(/^(\d{4}-\d\d-\d\d) (\d\d:\d\d:\d\d) ?([+-]\d\d)(\d\d)$/);return m?new Date(m[1]+'T'+m[2]+m[3]+':'+m[4]):new Date(x)};
 const attr=(s,n)=>{const m=s.match(new RegExp('(?:^|\\s)'+n+'="([^"]*)"'));return m?m[1]:null};
 /* Ανάγνωση export.zip της Apple Υγείας απευθείας (χωρίς αποσυμπίεση από τον χρήστη) */
+let AH_FILE=null;
 async function zipEntryStream(file,want){
   const u8=async(a,b)=>new DataView(await file.slice(a,b).arrayBuffer());
   const tailLen=Math.min(file.size,70000),tail=await u8(file.size-tailLen,file.size);let e=-1;
