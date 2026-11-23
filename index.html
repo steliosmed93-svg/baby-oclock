@@ -1657,7 +1657,6 @@ document.addEventListener('click',e=>{
   if(a==='bleon'){bleConnect();return}
   if(a==='bleoff'){try{BLE.dev&&BLE.dev.gatt.disconnect()}catch(x){}BLE.dev=null;render();return}
   if(a==='blesave'){bleSave();return}
-  if(a==='ahgo'){if(AH_FILE){el.disabled=true;el.textContent='Γίνεται καταχώρηση…';importAppleHealth(AH_FILE)}return}
   if(a==='caltoday'){calMonth=null;render();return}
   if(a==='bmetric'){bodyMetric=el.dataset.v;render();return}
   if(a==='bdemo'){bodyDemo();return}
@@ -1752,7 +1751,7 @@ document.addEventListener('click',e=>{
 });
 document.addEventListener('input',e=>{if(e.target.closest('form[data-form=report]'))refreshReport();if(e.target.dataset.a==='pscrub'){selDay=addDays(e.target.dataset.s,+e.target.value-1);const v=e.target.value;render();const r=document.querySelector('[data-a=pscrub]');if(r){r.value=v;r.focus()}}});
 const closeMenu=e=>{const m=$('#amenu');if(m&&!m.hidden&&(!e||!e.target.closest('.acct')))m.hidden=true};document.addEventListener('click',closeMenu,true);document.addEventListener('touchstart',closeMenu,{capture:true,passive:true});window.addEventListener('hashchange',()=>closeMenu());window.addEventListener('scroll',()=>closeMenu(),{passive:true});
-document.addEventListener('change',e=>{if(e.target.dataset.a==='ahimport'&&e.target.files[0]){AH_FILE=e.target.files[0];const f=AH_FILE,box=$('#ahpick');if(box)box.innerHTML=`<div class="card soft" style="padding:12px;margin-top:10px"><p style="margin:0 0 8px">Επιλέχθηκε: <b>${esc(f.name)}</b> (${(f.size/1048576).toFixed(1)} MB)</p><button class="btn" data-a="ahgo">✅ Καταχώρηση</button></div>`;return}if(e.target.dataset.a==='labsel'){LAB().cur=e.target.value;save();render();return}if(e.target.dataset.a==='automail'){PG().autoMail=e.target.checked;save();}if(e.target.dataset.a==='careshare'){S.care.share=e.target.checked;save();if(S.care.share)shareSync();else if(USER)DB.collection('care').doc(USER.uid).delete().catch(()=>{});toast(S.care.share?'Ο γιατρός σου βλέπει τις καταγραφές σου':'Η κοινοποίηση σταμάτησε')}if(e.target.closest('form[data-form=report]'))refreshReport();
+document.addEventListener('change',e=>{if(e.target.dataset.a==='ahimport'&&e.target.files[0]){AH_FILE=e.target.files[0];const f=AH_FILE,box=$('#ahpick');if($('#ahprog'))$('#ahprog').textContent='';if(box)box.innerHTML=`<div class="card soft" style="padding:12px;margin-top:10px"><p style="margin:0 0 8px">Επιλέχθηκε: <b>${esc(f.name)}</b> (${(f.size/1048576).toFixed(1)} MB)</p><button class="btn" id="ahgoBtn" onclick="ahStart()">✅ Καταχώρηση</button></div>`;setTimeout(ahStart,300);return}if(e.target.dataset.a==='labsel'){LAB().cur=e.target.value;save();render();return}if(e.target.dataset.a==='automail'){PG().autoMail=e.target.checked;save();}if(e.target.dataset.a==='careshare'){S.care.share=e.target.checked;save();if(S.care.share)shareSync();else if(USER)DB.collection('care').doc(USER.uid).delete().catch(()=>{});toast(S.care.share?'Ο γιατρός σου βλέπει τις καταγραφές σου':'Η κοινοποίηση σταμάτησε')}if(e.target.closest('form[data-form=report]'))refreshReport();
   const el=e.target;
   if(el.dataset.a==='diarydate'&&el.value)location.hash='diary/'+el.value;
   if(el.dataset.a==='import'&&el.files[0]){const r=new FileReader();r.onload=()=>{try{S=Object.assign(structuredClone(blank),JSON.parse(r.result));save();render();toast('Η επαναφορά ολοκληρώθηκε')}catch(x){toast('Μη έγκυρο αρχείο')}};r.readAsText(el.files[0])}
@@ -1897,11 +1896,11 @@ V.body=()=>{
      <p class="small muted" style="margin-top:8px">Οι βαθμολογίες (ανάκαμψη, φόρτος, ύπνος) υπολογίζονται από την εφαρμογή με βάση τον δικό σου μέσο όρο 30 ημερών. Δεν είναι οι αλγόριθμοι της Apple και δεν αποτελούν ιατρική μέτρηση.</p></div></div>
   </div>`;
 };
-V.body_import=()=>`<a href="#body" class="btn ghost">← Σώμα & Ανάκαμψη</a><h1>Εισαγωγή από Apple Health</h1><p class="small muted" style="margin-top:-6px">Έκδοση εισαγωγής 2 (με export.zip)</p>
+V.body_import=()=>`<a href="#body" class="btn ghost">← Σώμα & Ανάκαμψη</a><h1>Εισαγωγή από Apple Health</h1><p class="small muted" style="margin-top:-6px">Έκδοση εισαγωγής 3</p>
  <div class="grid g2"><div class="card"><h2>Βήματα στο iPhone</h2><ol class="small"><li>Άνοιξε την εφαρμογή <b>Υγεία</b> → πάτα τη φωτογραφία σου πάνω δεξιά.</li><li><b>Εξαγωγή όλων των δεδομένων υγείας</b> → Εξαγωγή. Περίμενε λίγα λεπτά.</li><li>Πάτα <b>Αποθήκευση στα Αρχεία</b> για το <b>export.zip</b>.</li><li>Εδώ πάτα το κουμπί από κάτω και διάλεξε κατευθείαν το <b>export.zip</b>. <b>Δεν χρειάζεται να το ανοίξεις.</b></li><li>Πάτα <b>✅ Καταχώρηση</b> και περίμενε να φτάσει στο 100%.</li></ol>
   <label class="btn" style="display:inline-flex;cursor:pointer">📂 Επιλογή export.zip<input type="file" data-a="ahimport" style="position:absolute;opacity:0;width:1px;height:1px"></label>
-  <div id="ahpick"></div>
-  <p class="small muted" style="margin-top:6px">Αν το έχεις ήδη ανοίξει, μπες στον φάκελο <b>apple_health_export</b> και διάλεξε το αρχείο <b>export.xml</b> (όχι τον φάκελο).</p><div id="ahprog" class="small" style="margin-top:10px"></div></div>
+  <div id="ahpick"></div><div id="ahprog" class="small" style="margin-top:10px;font-weight:600"></div>
+  <p class="small muted" style="margin-top:6px">Αν το έχεις ήδη ανοίξει, μπες στον φάκελο <b>apple_health_export</b> και διάλεξε το αρχείο <b>export.xml</b> (όχι τον φάκελο).</p></div>
   <div class="card soft"><h2>Τι εισάγεται (τελευταίοι 120 ημέρες)</h2><ul class="small"><li>HRV, παλμοί ηρεμίας, αναπνοές, SpO2</li><li>Θερμοκρασία καρπού στον ύπνο (Apple Watch Series 8 και νεότερα) ή βασική θερμοκρασία</li><li>Ύπνος με στάδια (βαθύς, REM, ελαφρύς, ξύπνια)</li><li>Βήματα, ενεργές θερμίδες, λεπτά άσκησης, προπονήσεις, VO2max</li><li>Πίεση</li><li>Ροή περιόδου, τεστ ωορρηξίας, τραχηλική βλέννη (στην καρτέλα Περίοδος)</li></ul><p class="small muted">Η επεξεργασία γίνεται μόνο μέσα στο κινητό σου. Το αρχείο δεν ανεβαίνει πουθενά. Το Apple Watch μετρά HRV ως SDNN: οι τιμές είναι συγκρίσιμες μόνο με τον δικό σου μέσο όρο, όχι με τιμές άλλων συσκευών.</p></div></div>`;
 
 /* ---------- Apple Health export.xml (ροή, χωρίς φόρτωση όλου του αρχείου) ---------- */
@@ -1912,7 +1911,10 @@ const AHW={Running:'Τρέξιμο',Walking:'Περπάτημα',Cycling:'Ποδ
 const ahD=x=>{const m=x.match(/^(\d{4}-\d\d-\d\d) (\d\d:\d\d:\d\d) ?([+-]\d\d)(\d\d)$/);return m?new Date(m[1]+'T'+m[2]+m[3]+':'+m[4]):new Date(x)};
 const attr=(s,n)=>{const m=s.match(new RegExp('(?:^|\\s)'+n+'="([^"]*)"'));return m?m[1]:null};
 /* Ανάγνωση export.zip της Apple Υγείας απευθείας (χωρίς αποσυμπίεση από τον χρήστη) */
-let AH_FILE=null;
+let AH_FILE=null,AH_BUSY=false;
+async function ahStart(){if(!AH_FILE||AH_BUSY)return;AH_BUSY=true;const b=$('#ahgoBtn'),pr=$('#ahprog');if(b){b.disabled=true;b.textContent='Γίνεται καταχώρηση…'}if(pr){pr.textContent='Ξεκινάει η ανάγνωση…';pr.scrollIntoView({block:'center',behavior:'smooth'})}
+  try{await importAppleHealth(AH_FILE)}catch(e){if(pr)pr.textContent='Σφάλμα: '+(e&&e.message||e)+'. Στείλε μου αυτό το μήνυμα.';console.error(e)}
+  AH_BUSY=false;if(b){b.disabled=false;b.textContent='↻ Ξανά καταχώρηση'}}
 async function zipEntryStream(file,want){
   const u8=async(a,b)=>new DataView(await file.slice(a,b).arrayBuffer());
   const tailLen=Math.min(file.size,70000),tail=await u8(file.size-tailLen,file.size);let e=-1;
@@ -1952,12 +1954,14 @@ async function importAppleHealth(file){
     let src={stream:null,size:file.size};const isZip=/\.zip$/i.test(file.name)||/zip/.test(file.type);
     if(isZip){prog.textContent='Άνοιγμα του export.zip…';try{src=await zipEntryStream(file)}catch(z){prog.textContent=z.message==='noxml'?'Δεν βρέθηκε export.xml μέσα στο zip. Βεβαιώσου ότι είναι η εξαγωγή της εφαρμογής Υγεία.':z.message==='nodecomp'?'Η συσκευή σου δεν μπορεί να ανοίξει zip. Ενημέρωσε το iOS ή άνοιξε πρώτα το zip στα Αρχεία και διάλεξε το export.xml.':'Το αρχείο δεν είναι έγκυρο zip.';return}}
     else src.stream=file.stream();
-    const reader=src.stream.pipeThrough(new TextDecoderStream()).getReader();let buf='',read=0;
+    const reader=src.stream.pipeThrough(new TextDecoderStream()).getReader();let buf='',read=0,chunks=0;
     while(true){const {done,value}=await reader.read();if(done)break;read+=value.length;buf+=value;
-      let i;while(true){const r1=buf.indexOf('<Record '),w1=buf.indexOf('<Workout ');i=r1<0?w1:w1<0?r1:Math.min(r1,w1);if(i<0)break;const j=buf.indexOf('>',i);if(j<0)break;const tag=buf.slice(i+1,j);buf=buf.slice(j+1);handle(tag.startsWith('Record')?tag.slice(7):tag)}
-      if(buf.length>2e6)buf=buf.slice(-1e5);
+      let pos=0,r1=buf.indexOf('<Record ',0),w1=buf.indexOf('<Workout ',0);
+      while(true){if(r1>=0&&r1<pos)r1=buf.indexOf('<Record ',pos);if(w1>=0&&w1<pos)w1=buf.indexOf('<Workout ',pos);const i=r1<0?w1:w1<0?r1:Math.min(r1,w1);if(i<0){pos=Math.max(pos,buf.length-10);break}const j=buf.indexOf('>',i);if(j<0){pos=i;break}const tag=buf.slice(i+1,j);pos=j+1;try{handle(tag.charCodeAt(0)===82?tag.slice(7):tag)}catch(x){}}
+      buf=buf.slice(pos);if(buf.length>2e6)buf=buf.slice(-1e5);
+      if(++chunks%20===0)await new Promise(r=>setTimeout(r,0));
       prog.textContent='Ανάγνωση… '+Math.min(99,Math.round(read/(src.size||file.size)*100))+'% · '+n+' μετρήσεις';}
-  }catch(e){prog.textContent='Δεν ήταν δυνατή η ανάγνωση του αρχείου. Βεβαιώσου ότι επέλεξες το export.xml.';return}
+  }catch(e){console.error(e);prog.textContent='Δεν ήταν δυνατή η ανάγνωση του αρχείου ('+(e&&e.message||e)+'). Βεβαιώσου ότι επέλεξες το export.zip ή το export.xml.';return}
   const B=BD();let nd=0;
   Object.entries(acc).forEach(([d,a])=>{const o=B.days[d]=B.days[d]||{};Object.entries(a).forEach(([k,x])=>{o[k]=x.mode==='sum'?Math.round(x.s):x.mode==='last'?Math.round(x.last*100)/100:Math.round(x.s/x.c*10)/10});o.src='apple';nd++});
   Object.entries(sleep).forEach(([d,s])=>{const o=B.days[d]=B.days[d]||{};const asleep=s.deep+s.rem+s.light;if(asleep<60)return;o.sleepH=Math.round(asleep/60*10)/10;o.deep=Math.round(s.deep);o.rem=Math.round(s.rem);o.light=Math.round(s.light);o.awake=Math.round(s.awake);o.bed=s.b;o.wake=s.w;o.src='apple'});
