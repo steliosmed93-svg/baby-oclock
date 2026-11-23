@@ -1722,7 +1722,7 @@ document.addEventListener('click',e=>{
   if(a==='inbimport'){inboxImport(el.dataset.id);return}
   if(a==='inbread'){DB.collection('care').doc(USER.uid).collection('inbox').doc(el.dataset.id).update({read:true}).catch(()=>{});return}
   if(a==='gencode'){genCode();return}
-  if(a==='codeshare'){const c=S.care.lastCode.c,t='Γιατρέ, ο κωδικός σύνδεσης για την εφαρμογή Baby O’Clock είναι: '+c+'\nΠύλη γιατρών: '+DOC_URL()+'?code='+c;if(navigator.share)navigator.share({text:t}).catch(()=>{});else navigator.clipboard.writeText(t).then(()=>toast('Αντιγράφηκε'));return}
+  if(a==='codeshare'){const c=S.care.lastCode.c,t='Γιατρέ, ο κωδικός σύνδεσης για την εφαρμογή Baby O’Clock είναι: '+c+'\nΠρωτόκολλα Εξωσωματικής (νέος φάκελος): https://steliosmed93-svg.github.io/ivf-protocols/?boc='+c+'#tracker\nΉ πύλη γιατρών: '+DOC_URL()+'?code='+c;if(navigator.share)navigator.share({text:t}).catch(()=>{});else navigator.clipboard.writeText(t).then(()=>toast('Αντιγράφηκε'));return}
   if(a==='docrevoke'){if(confirm('Να αφαιρεθεί η πρόσβαση αυτού του γιατρού;'))DB.collection('care').doc(USER.uid).collection('doctors').doc(el.dataset.id).delete().then(()=>toast('Αφαιρέθηκε')).catch(()=>toast('Σφάλμα'));return}
   if(a==='fopen'){fileOpen(el.dataset.id);return}
   if(a==='mclose'){el.closest('.modal').remove();return}
