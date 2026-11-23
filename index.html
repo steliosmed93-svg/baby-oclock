@@ -166,7 +166,7 @@ details.ex summary{font-weight:600}
 .cday.c-perp{background:repeating-linear-gradient(45deg,#fde1d8,#fde1d8 4px,#fff 4px,#fff 8px);border-color:#f2b3a1}
 .cday.c-fert{background:#d5f0ec;border-color:#8fd1c8}
 .cday.c-ov{background:#2f7f7a;color:#fff;border-color:#2f7f7a}
-.cday.c-today{box-shadow:0 0 0 2px var(--ink) inset}
+.cday.c-today{outline:3px solid var(--lilac);outline-offset:2px;z-index:1;font-weight:800;transform:scale(1.06)}.cday.c-today::after{content:'Σήμερα';position:absolute;left:50%;bottom:-2px;transform:translate(-50%,50%);font-size:.55rem;font-weight:700;background:var(--lilac);color:#fff;border-radius:6px;padding:1px 5px;white-space:nowrap;letter-spacing:.02em}.cal{row-gap:10px;padding:6px}
 .cday.c-sel{transform:scale(1.08);box-shadow:0 4px 12px rgba(0,0,0,.18)}
 .cday .mk{position:absolute;bottom:2px;left:50%;transform:translateX(-50%);font-size:.55rem;font-style:normal;background:#c99a2e;color:#fff;border-radius:4px;padding:0 3px}
 .cday .dot2{position:absolute;top:4px;right:4px;width:6px;height:6px;border-radius:50%;background:var(--lilac)}
@@ -1060,7 +1060,7 @@ function calendarHTML(sel){
     const lg=p.days[date]||{};
     if(lg.flow>0)cls='c-per';else if(ci){const ph=phaseOf(ci.cd,L,B,ov,date);if(ph==='period'&&(date>today()||!st.includes(ci.start)||date>(p.ends[ci.start]||addDays(ci.start,B-1))))cls=date>today()?'c-perp':'';else if(ph==='period')cls='c-per';else if(ph==='ov')cls='c-ov';else if(ph==='fert')cls='c-fert'}
     cells.push(`<button class="cday ${cls}${date===today()?' c-today':''}${date===sel?' c-sel':''}" data-a="pday" data-d="${date}">${d}${lg.lh==='pos'?'<i class="mk">LH</i>':''}${lg.notes||lg.pain>0||lg.mucus?'<i class="dot2"></i>':''}</button>`)}
-  return `<div class="row between"><button class="btn ghost" data-a="calnav" data-v="-1">‹</button><b>${GRN[mo-1]} ${y}</b><button class="btn ghost" data-a="calnav" data-v="1">›</button></div>
+  return `<div class="row between"><button class="btn ghost" data-a="calnav" data-v="-1">‹</button><b>${GRN[mo-1]} ${y}</b>${m!==today().slice(0,7)?'<button class="btn alt sm" data-a="caltoday">Σήμερα</button>':''}<button class="btn ghost" data-a="calnav" data-v="1">›</button></div>
    <div class="cal"><span class="wd">Δ</span><span class="wd">Τ</span><span class="wd">Τ</span><span class="wd">Π</span><span class="wd">Π</span><span class="wd">Σ</span><span class="wd">Κ</span>${cells.join('')}</div>
    <div class="row small" style="gap:12px;margin-top:8px"><span><i class="lg" style="background:${P_COL.period}"></i>Περίοδος</span><span><i class="lg" style="background:#f6c2b2"></i>Αναμενόμενη</span><span><i class="lg" style="background:${P_COL.fert}"></i>Γόνιμες</span><span><i class="lg" style="background:${P_COL.ov}"></i>Ωορρηξία</span></div>`;
 }
@@ -1657,6 +1657,7 @@ document.addEventListener('click',e=>{
   if(a==='bleon'){bleConnect();return}
   if(a==='bleoff'){try{BLE.dev&&BLE.dev.gatt.disconnect()}catch(x){}BLE.dev=null;render();return}
   if(a==='blesave'){bleSave();return}
+  if(a==='caltoday'){calMonth=null;render();return}
   if(a==='bmetric'){bodyMetric=el.dataset.v;render();return}
   if(a==='bdemo'){bodyDemo();return}
   if(a==='bdemodel'){const D=BD().days;Object.keys(D).forEach(k=>{if(D[k].demo)delete D[k]});save();render();toast('Τα δοκιμαστικά δεδομένα διαγράφηκαν');return}
