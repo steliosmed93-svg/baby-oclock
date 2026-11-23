@@ -1300,7 +1300,7 @@ V.care=()=>{
   <div class="grid g2">
    <div class="card"><h2>Σύνδεση με νέο γιατρό</h2>
     ${lc?`<p class="small muted">Δώσε αυτόν τον κωδικό στον γιατρό σου (ισχύει έως ${fmt(ymd(new Date(lc.exp)))}):</p><div class="codebox">${lc.c}</div>
-      <div class="row" style="justify-content:center"><button class="btn alt sm" data-a="codeshare">📤 Αποστολή στον γιατρό</button><button class="btn ghost" data-a="gencode">Νέος κωδικός</button></div>
+      <form data-form="codemail" class="row" style="justify-content:center;gap:6px;margin-top:6px"><input name="em" type="email" required placeholder="email γιατρού" value="${esc(S.clinic.email||'')}" style="max-width:240px"><button class="btn sm">📧 Email στον γιατρό</button></form><div class="row" style="justify-content:center"><button class="btn alt sm" data-a="codeshare">💬 Viber, WhatsApp, SMS…</button><button class="btn ghost" data-a="gencode">Νέος κωδικός</button></div><p class="small muted" style="text-align:center;margin:6px 0 0">Ή απλά πες του τον κωδικό στο τηλέφωνο.</p>
       <p class="small muted" style="margin-top:8px">Ο γιατρός βάζει τον κωδικό στον φάκελό σου στην εφαρμογή «Πρωτόκολλα Εξωσωματικής» ή στην πύλη γιατρών.</p>`:`<p>Δημιούργησε έναν κωδικό μίας χρήσης και δώσ' τον στον γυναικολόγο σου.</p><button class="btn coral" data-a="gencode">Δημιουργία κωδικού</button>`}
    </div>
    <div class="card"><h2>Συνδεδεμένοι γιατροί</h2>
@@ -1722,7 +1722,8 @@ document.addEventListener('click',e=>{
   if(a==='inbimport'){inboxImport(el.dataset.id);return}
   if(a==='inbread'){DB.collection('care').doc(USER.uid).collection('inbox').doc(el.dataset.id).update({read:true}).catch(()=>{});return}
   if(a==='gencode'){genCode();return}
-  if(a==='codeshare'){const c=S.care.lastCode.c,t='Γιατρέ, ο κωδικός σύνδεσης για την εφαρμογή Baby O’Clock είναι: '+c+'\nΠρωτόκολλα Εξωσωματικής (νέος φάκελος): https://steliosmed93-svg.github.io/ivf-protocols/?boc='+c+'#tracker\nΉ πύλη γιατρών: '+DOC_URL()+'?code='+c;if(navigator.share)navigator.share({text:t}).catch(()=>{});else navigator.clipboard.writeText(t).then(()=>toast('Αντιγράφηκε'));return}
+  if(a==='codeshare'){const t=codeMsg();if(navigator.share)navigator.share({text:t}).catch(()=>{});else navigator.clipboard.writeText(t).then(()=>toast('Αντιγράφηκε: επικόλλησέ το σε email ή μήνυμα'));return}
+  if(false){const c=S.care.lastCode.c,t='Γιατρέ, ο κωδικός σύνδεσης για την εφαρμογή Baby O’Clock είναι: '+c+'\nΠρωτόκολλα Εξωσωματικής (νέος φάκελος): https://steliosmed93-svg.github.io/ivf-protocols/?boc='+c+'#tracker\nΉ πύλη γιατρών: '+DOC_URL()+'?code='+c;if(navigator.share)navigator.share({text:t}).catch(()=>{});else navigator.clipboard.writeText(t).then(()=>toast('Αντιγράφηκε'));return}
   if(a==='docrevoke'){if(confirm('Να αφαιρεθεί η πρόσβαση αυτού του γιατρού;'))DB.collection('care').doc(USER.uid).collection('doctors').doc(el.dataset.id).delete().then(()=>toast('Αφαιρέθηκε')).catch(()=>toast('Σφάλμα'));return}
   if(a==='fopen'){fileOpen(el.dataset.id);return}
   if(a==='mclose'){el.closest('.modal').remove();return}
@@ -1786,6 +1787,7 @@ document.addEventListener('submit',e=>{
   if(k==='pset'){const p=PD();p.len=+v.len||28;p.bleed=+v.bleed||5;toast('Αποθηκεύτηκε')}
   if(k==='pday'){const p=PD(),d=selDay||today();p.days[d]=Object.assign(p.days[d]||{},{temp:v.temp,notes:v.notes});toast('Αποθηκεύτηκε')}
   if(k==='bday'){const B=BD(),d=bodySel||today(),o=B.days[d]=B.days[d]||{};['hrv','rhr','rr','spo2','temp','sleepH','deep','rem','steps','exMin','sys','dia','vo2'].forEach(x=>{const n=String(v[x]||'').replace(',','.');if(n===''){delete o[x]}else if(!isNaN(+n))o[x]=+n});delete o.demo;o.src=o.src||'manual';if(o.temp!=null){const P=PD();P.days[d]=Object.assign(P.days[d]||{},{temp:o.temp})}toast('Αποθηκεύτηκε')}
+  if(k==='codemail'){S.clinic.email=S.clinic.email||v.em;location.href='mailto:'+encodeURIComponent(v.em)+'?subject='+encodeURIComponent('Κωδικός σύνδεσης Baby O’Clock')+'&body='+encodeURIComponent(codeMsg());toast('Άνοιξε το email σου: πάτα «Αποστολή»')}
   if(k==='bwork'){const d=BD().days[bodySel||today()]=BD().days[bodySel||today()]||{};(d.workouts=d.workouts||[]).push({type:v.type,min:+v.min,int:+v.int});toast('Η άσκηση προστέθηκε')}
   if(k==='bcfg'){BD().cfg.need=+v.need||8;toast('Αποθηκεύτηκε')}
   if(k==='q'){S.questions.push({id:uid(),text:v.text,done:false})}
@@ -1973,6 +1975,7 @@ function bleImportSummary(raw){let a;try{a=JSON.parse(raw)}catch(e){return 0}a=A
 function bleSave(){const d=today(),B=BD(),o=B.days[d]=B.days[d]||{};const h=rmssd(BLE.rr);const hr=BLE.hr.slice(-90);
   if(h==null&&!hr.length&&BLE.temp==null){toast('Δεν υπάρχουν ακόμα αρκετά δεδομένα');return}
   if(h!=null)o.hrv=h;if(hr.length){const s=hr.slice().sort((a,b)=>a-b);o.rhr=s[Math.floor(s.length*0.25)]}if(BLE.temp!=null){o.temp=BLE.temp;const P=PD();P.days[d]=Object.assign(P.days[d]||{},{temp:BLE.temp})}if(BLE.spo2!=null)o.spo2=BLE.spo2;delete o.demo;o.src=o.src||'band';save();toast('Η πρωινή μέτρηση αποθηκεύτηκε');render()}
+function codeMsg(){const c=S.care.lastCode.c;return 'Γιατρέ, ο κωδικός σύνδεσης για την εφαρμογή Baby O’Clock είναι: '+c+'\n\nΠρωτόκολλα Εξωσωματικής (δημιουργεί φάκελο): https://steliosmed93-svg.github.io/ivf-protocols/?boc='+c+'#tracker\nΉ πύλη γιατρών: '+DOC_URL()+'?code='+c}
 function bleCard(){const ok=!!navigator.bluetooth;return `<div class="card"><h2>📡 Δική μας συσκευή (Bluetooth)</h2>
  <p class="small">Σύνδεση με το βραχιόλι Baby O’Clock (πρωτότυπο) ή με έτοιμο αισθητήρα παλμών που μεταδίδει διαστήματα RR, π.χ. ζώνη Polar H10. Κάνε την <b>πρωινή μέτρηση</b>: ξαπλωμένη, 2 έως 3 λεπτά, πριν σηκωθείς.</p>
  ${ok?`<div class="row">${BLE.dev?`<button class="btn" data-a="blesave">Αποθήκευση πρωινής μέτρησης</button><button class="btn ghost" data-a="bleoff">Αποσύνδεση</button>`:`<button class="btn alt" data-a="bleon">Σύνδεση συσκευής</button>`}</div>`:`<p class="small muted">Ο browser σου δεν υποστηρίζει Bluetooth. Δουλεύει σε Chrome (Android, υπολογιστής). Στο iPhone θα δουλεύει μέσα από την εφαρμογή του App Store.</p>`}
