@@ -831,7 +831,7 @@ function fbInit(){
   if(typeof firebase==='undefined'){syncState='offline';acct();return}
   try{firebase.initializeApp(FB_CONFIG);DB=firebase.firestore();
     firebase.auth().getRedirectResult().catch(()=>{});
-    firebase.auth().onAuthStateChanged(async u=>{USER=u;cloudReady=false;acct();if(u){await pullCloud();careStart();filesSync()}else careStop();if(['care','files','settings'].includes(route().split('/')[0]))render()});
+    firebase.auth().onAuthStateChanged(async u=>{USER=u;cloudReady=false;acct();if(u){await pullCloud();careStart();filesSync();hkFlush()}else{careStop();hkFlush()}if(['care','files','settings'].includes(route().split('/')[0]))render()});
   }catch(e){console.warn(e);syncState='offline';acct()}
 }
 async function pullCloud(){
@@ -840,7 +840,7 @@ async function pullCloud(){
     const ref=DB.collection('users').doc(USER.uid);const snap=await ref.get();
     if(snap.exists&&snap.data().data){
       const cloud=JSON.parse(snap.data().data),cMs=snap.data().updatedMs||0;
-      if(isEmptyLocal()||(S._updated||0)<=cMs&&JSON.stringify(cloud)!==JSON.stringify(S)&&confirm('Βρέθηκαν αποθηκευμένα δεδομένα στον λογαριασμό σου ('+new Date(cMs).toLocaleString('el-GR')+').\n\nΟΚ: φόρτωσέ τα σε αυτή τη συσκευή\nΆκυρο: κράτα τα δεδομένα αυτής της συσκευής και ανέβασέ τα')){
+      if(isEmptyLocal()||(S._updated||0)<=cMs&&JSON.stringify(cloud)!==JSON.stringify(S)&&(HK_LAUNCH||confirm('Βρέθηκαν αποθηκευμένα δεδομένα στον λογαριασμό σου ('+new Date(cMs).toLocaleString('el-GR')+').\n\nΟΚ: φόρτωσέ τα σε αυτή τη συσκευή\nΆκυρο: κράτα τα δεδομένα αυτής της συσκευής και ανέβασέ τα'))){
         S=Object.assign(structuredClone(blank),cloud);localStorage.setItem(KEY,JSON.stringify(S));cloudReady=true;render();syncState='ok';acct();return}
     }
     cloudReady=true;await pushCloud();
@@ -1901,6 +1901,7 @@ V.body_import=()=>`<a href="#body" class="btn ghost">← Σώμα & Ανάκαμ
   <label class="btn" style="display:inline-flex;cursor:pointer">📂 Επιλογή export.zip<input type="file" data-a="ahimport" style="position:absolute;opacity:0;width:1px;height:1px"></label>
   <div id="ahpick"></div><div id="ahprog" class="small" style="margin-top:10px;font-weight:600"></div>
   <p class="small muted" style="margin-top:6px">Αν το έχεις ήδη ανοίξει, μπες στον φάκελο <b>apple_health_export</b> και διάλεξε το αρχείο <b>export.xml</b> (όχι τον φάκελο).</p></div>
+  <div class="card" style="border:2px solid var(--teal)"><h2>⏰ Αυτόματα κάθε πρωί</h2><p class="small">Με μια <b>Συντόμευση</b> του iPhone, το Baby O’Clock παίρνει κάθε πρωί μόνο του από την Υγεία: HRV, παλμούς ηρεμίας, αναπνοές, SpO2, θερμοκρασία καρπού, ύπνο, βήματα και άσκηση.</p><ol class="small"><li>Άνοιξε τον σύνδεσμο της Συντόμευσης που σου έδωσε ο γιατρός σου και πάτα <b>Προσθήκη συντόμευσης</b>.</li><li>Τρέξε τη μία φορά και πάτα <b>Να επιτρέπεται</b> για την Υγεία.</li><li>Συντομεύσεις → <b>Αυτοματισμός</b> → + → <b>Ώρα της ημέρας</b> 08:00, Καθημερινά → <b>Άμεση εκτέλεση</b> → διάλεξε «Baby O’Clock Υγεία».</li></ol><p class="small muted">Χρειάζεται να είσαι συνδεδεμένη με τον λογαριασμό σου, ώστε τα δεδομένα να περνάνε και στην εφαρμογή της αρχικής οθόνης.</p></div>
   <div class="card soft"><h2>Τι εισάγεται (τελευταίοι 120 ημέρες)</h2><ul class="small"><li>HRV, παλμοί ηρεμίας, αναπνοές, SpO2</li><li>Θερμοκρασία καρπού στον ύπνο (Apple Watch Series 8 και νεότερα) ή βασική θερμοκρασία</li><li>Ύπνος με στάδια (βαθύς, REM, ελαφρύς, ξύπνια)</li><li>Βήματα, ενεργές θερμίδες, λεπτά άσκησης, προπονήσεις, VO2max</li><li>Πίεση</li><li>Ροή περιόδου, τεστ ωορρηξίας, τραχηλική βλέννη (στην καρτέλα Περίοδος)</li></ul><p class="small muted">Η επεξεργασία γίνεται μόνο μέσα στο κινητό σου. Το αρχείο δεν ανεβαίνει πουθενά. Το Apple Watch μετρά HRV ως SDNN: οι τιμές είναι συγκρίσιμες μόνο με τον δικό σου μέσο όρο, όχι με τιμές άλλων συσκευών.</p></div></div>`;
 
 /* ---------- Apple Health export.xml (ροή, χωρίς φόρτωση όλου του αρχείου) ---------- */
@@ -2016,9 +2017,32 @@ function bleCard(){const ok=!!navigator.bluetooth;return `<div class="card"><h2>
  ${ok?`<div class="row">${BLE.dev?`<button class="btn" data-a="blesave">Αποθήκευση πρωινής μέτρησης</button><button class="btn ghost" data-a="bleoff">Αποσύνδεση</button>`:`<button class="btn alt" data-a="bleon">Σύνδεση συσκευής</button>`}</div>`:`<p class="small muted">Ο browser σου δεν υποστηρίζει Bluetooth. Δουλεύει σε Chrome (Android, υπολογιστής). Στο iPhone θα δουλεύει μέσα από την εφαρμογή του App Store.</p>`}
  <div id="blelive" style="margin-top:10px"></div></div>`}
 
+/* ---------- Αυτόματη καταχώρηση από Συντόμευση iPhone (Υγεία) ---------- */
+let HK_LAUNCH=false;
+function hkParse(h){const q=new URLSearchParams(h.replace(/^#hk[?\/]?/,''));const num=k=>{let v=q.get(k);if(v==null||v==='')return null;v=parseFloat(String(v).replace(/\s/g,'').replace(',','.'));return isFinite(v)?v:null};
+  let date=(q.get('date')||'').slice(0,10);if(!/^\d{4}-\d\d-\d\d$/.test(date))date=today();const o={};const set=(k,v,dp=1)=>{if(v==null||v<=0)return;o[k]=Math.round(v*10**dp)/10**dp};
+  set('hrv',num('hrv'),0);set('rhr',num('rhr'),0);set('rr',num('rr'),1);let sp=num('spo2');if(sp!=null&&sp<=1.5)sp*=100;set('spo2',sp,0);
+  const t=num('temp');if(t!=null&&t>30&&t<45)set('temp',t,2);
+  let sl=num('sleep');if(sl!=null){if(sl>1000)sl/=3600;else if(sl>24)sl/=60;set('sleepH',sl,1)}
+  ['deep','rem','light','awake'].forEach(k=>{let v=num(k);if(v!=null){if(v>1000)v/=60;set(k,v,0)}});
+  set('steps',num('steps'),0);set('kcal',num('kcal'),0);set('exMin',num('ex'),0);set('vo2',num('vo2'),1);set('sys',num('sys'),0);set('dia',num('dia'),0);set('flow',num('flow'),0);
+  return {date,o}}
+function hkQueue(){try{return JSON.parse(localStorage.getItem('boc.hkq')||'[]')}catch(e){return[]}}
+function hkIngest(){const h=location.hash;if(!/^#hk[?\/]/.test(h))return false;const r=hkParse(h);HK_LAUNCH=true;
+  const q=hkQueue();q.push(r);localStorage.setItem('boc.hkq',JSON.stringify(q.slice(-60)));history.replaceState(null,'',location.pathname+'#body');bodySel=r.date;
+  setTimeout(()=>toast(Object.keys(r.o).length?('✅ Ελήφθησαν '+Object.keys(r.o).length+' μετρήσεις από την Υγεία'):'Η Συντόμευση δεν έστειλε μετρήσεις'),400);
+  setTimeout(()=>{if(typeof firebase==='undefined')hkFlush()},8000);return true}
+function hkApply(list){let n=0;const B=BD(),P=PD();list.forEach(({date,o})=>{if(!date||!o)return;const d=B.days[date]=B.days[date]||{};Object.entries(o).forEach(([k,v])=>{if(k==='flow'){P.days[date]=Object.assign(P.days[date]||{},{flow:Math.min(4,Math.round(v))});if(!P.starts.some(s=>Math.abs(days(s,date))<10)&&!(P.days[addDays(date,-1)]||{}).flow){P.starts.push(date);P.starts.sort()}}else{d[k]=v;n++}});if(o.temp){P.days[date]=Object.assign(P.days[date]||{},{temp:o.temp})}delete d.demo;d.src='shortcut'});return n}
+let HK_FLUSHING=false;
+async function hkFlush(){if(HK_FLUSHING)return;HK_FLUSHING=true;try{const q=hkQueue();
+  if(USER&&DB){const col=DB.collection('users').doc(USER.uid).collection('hk');for(const r of q)await col.doc(r.date+'_'+Date.now()+Math.random().toString(36).slice(2,6)).set(r);localStorage.removeItem('boc.hkq');if(HK_LAUNCH&&q.length){HK_FLUSHING=false;return}
+    const snap=await col.get();if(!snap.empty){const list=snap.docs.map(d=>d.data()).sort((a,b)=>a.date<b.date?-1:1);if(hkApply(list)){save();render()}for(const d of snap.docs)await d.ref.delete()}}
+  else if(q.length){if(hkApply(q)){save();render()}localStorage.removeItem('boc.hkq')}
+ }catch(e){console.warn('hk',e)}HK_FLUSHING=false}
 /* ---------- Router ---------- */
 function render(){const r=route().split('/')[0];const fn=V[r]||V.today;if(r!=='coach')clearTimeout(breathTimer);$('#app').innerHTML=fn();nav();if(r==='preg'||r==='baby')startTickers();else clearInterval(contrTick);if(r==='files')hydrateThumbs();if(r==='body')bleLive()}
-window.addEventListener('hashchange',()=>{render();scrollTo(0,0)});
+window.addEventListener('hashchange',()=>{hkIngest();render();scrollTo(0,0)});
+if(!hkIngest()&&hkQueue().length)setTimeout(()=>{if(typeof firebase==='undefined')hkFlush()},8000);
 applyTheme();render();onboard();acct();fbInit();showLock();
 setInterval(tick,30000);tick();
 if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
