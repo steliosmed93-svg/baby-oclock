@@ -1897,8 +1897,9 @@ V.body=()=>{
   </div>`;
 };
 V.body_import=()=>`<a href="#body" class="btn ghost">← Σώμα & Ανάκαμψη</a><h1>Εισαγωγή από Apple Health</h1>
- <div class="grid g2"><div class="card"><h2>Βήματα στο iPhone</h2><ol class="small"><li>Άνοιξε την εφαρμογή <b>Υγεία</b> → πάτα τη φωτογραφία σου πάνω δεξιά.</li><li><b>Εξαγωγή όλων των δεδομένων υγείας</b> → Εξαγωγή. Περίμενε λίγα λεπτά.</li><li>Αποθήκευσε το αρχείο <b>export.zip</b> στα <b>Αρχεία</b>.</li><li>Στα Αρχεία πάτα το export.zip για να ανοίξει ο φάκελος <b>apple_health_export</b>.</li><li>Εδώ, πάτα «Επιλογή αρχείου» και διάλεξε το <b>export.xml</b> από τον φάκελο.</li></ol>
-  <input type="file" accept=".xml,text/xml,application/xml" data-a="ahimport"><div id="ahprog" class="small" style="margin-top:10px"></div></div>
+ <div class="grid g2"><div class="card"><h2>Βήματα στο iPhone</h2><ol class="small"><li>Άνοιξε την εφαρμογή <b>Υγεία</b> → πάτα τη φωτογραφία σου πάνω δεξιά.</li><li><b>Εξαγωγή όλων των δεδομένων υγείας</b> → Εξαγωγή. Περίμενε λίγα λεπτά.</li><li>Πάτα <b>Αποθήκευση στα Αρχεία</b> για το <b>export.zip</b>.</li><li>Εδώ πάτα το κουμπί από κάτω και διάλεξε κατευθείαν το <b>export.zip</b>. <b>Δεν χρειάζεται να το ανοίξεις.</b></li></ol>
+  <label class="btn" style="display:inline-flex;cursor:pointer">📂 Επιλογή export.zip<input type="file" data-a="ahimport" style="position:absolute;opacity:0;width:1px;height:1px"></label>
+  <p class="small muted" style="margin-top:6px">Αν το έχεις ήδη ανοίξει, μπες στον φάκελο <b>apple_health_export</b> και διάλεξε το αρχείο <b>export.xml</b> (όχι τον φάκελο).</p><div id="ahprog" class="small" style="margin-top:10px"></div></div>
   <div class="card soft"><h2>Τι εισάγεται (τελευταίοι 120 ημέρες)</h2><ul class="small"><li>HRV, παλμοί ηρεμίας, αναπνοές, SpO2</li><li>Θερμοκρασία καρπού στον ύπνο (Apple Watch Series 8 και νεότερα) ή βασική θερμοκρασία</li><li>Ύπνος με στάδια (βαθύς, REM, ελαφρύς, ξύπνια)</li><li>Βήματα, ενεργές θερμίδες, λεπτά άσκησης, προπονήσεις, VO2max</li><li>Πίεση</li><li>Ροή περιόδου, τεστ ωορρηξίας, τραχηλική βλέννη (στην καρτέλα Περίοδος)</li></ul><p class="small muted">Η επεξεργασία γίνεται μόνο μέσα στο κινητό σου. Το αρχείο δεν ανεβαίνει πουθενά. Το Apple Watch μετρά HRV ως SDNN: οι τιμές είναι συγκρίσιμες μόνο με τον δικό σου μέσο όρο, όχι με τιμές άλλων συσκευών.</p></div></div>`;
 
 /* ---------- Apple Health export.xml (ροή, χωρίς φόρτωση όλου του αρχείου) ---------- */
@@ -1908,6 +1909,29 @@ const AHFLOW={HKCategoryValueMenstrualFlowUnspecified:2,HKCategoryValueMenstrual
 const AHW={Running:'Τρέξιμο',Walking:'Περπάτημα',Cycling:'Ποδήλατο',Swimming:'Κολύμπι',Yoga:'Yoga',TraditionalStrengthTraining:'Βάρη',FunctionalStrengthTraining:'Λειτουργική προπόνηση',HighIntensityIntervalTraining:'HIIT',CrossTraining:'Cross training',Pilates:'Pilates',Elliptical:'Ελλειπτικό',Dance:'Χορός',Hiking:'Πεζοπορία',MindAndBody:'Νους και σώμα'};
 const ahD=x=>{const m=x.match(/^(\d{4}-\d\d-\d\d) (\d\d:\d\d:\d\d) ?([+-]\d\d)(\d\d)$/);return m?new Date(m[1]+'T'+m[2]+m[3]+':'+m[4]):new Date(x)};
 const attr=(s,n)=>{const m=s.match(new RegExp('(?:^|\\s)'+n+'="([^"]*)"'));return m?m[1]:null};
+/* Ανάγνωση export.zip της Apple Υγείας απευθείας (χωρίς αποσυμπίεση από τον χρήστη) */
+async function zipEntryStream(file,want){
+  const u8=async(a,b)=>new DataView(await file.slice(a,b).arrayBuffer());
+  const tailLen=Math.min(file.size,70000),tail=await u8(file.size-tailLen,file.size);let e=-1;
+  for(let i=tailLen-22;i>=0;i--){if(tail.getUint32(i,true)===0x06054b50){e=i;break}}
+  if(e<0)throw new Error('nozip');
+  let cdOff=tail.getUint32(e+16,true),cdSize=tail.getUint32(e+12,true);
+  if(cdOff===0xFFFFFFFF||cdSize===0xFFFFFFFF){const l=e-20;if(l>=0&&tail.getUint32(l,true)===0x07064b50){const z=Number(tail.getBigUint64(l+8,true));const zd=await u8(z,z+56);cdSize=Number(zd.getBigUint64(40,true));cdOff=Number(zd.getBigUint64(48,true))}}
+  const cd=await u8(cdOff,cdOff+cdSize);let p=0,hit=null;const dec=new TextDecoder();
+  while(p+46<=cd.byteLength&&cd.getUint32(p,true)===0x02014b50){
+    const meth=cd.getUint16(p+10,true);let comp=cd.getUint32(p+20,true),unc=cd.getUint32(p+24,true);const nl=cd.getUint16(p+28,true),xl=cd.getUint16(p+30,true),cl=cd.getUint16(p+32,true);let off=cd.getUint32(p+42,true);
+    const name=dec.decode(new Uint8Array(cd.buffer,cd.byteOffset+p+46,nl));
+    let x=p+46+nl;const xe=x+xl;while(x+4<=xe){const id=cd.getUint16(x,true),sz=cd.getUint16(x+2,true);if(id===1){let q=x+4;if(unc===0xFFFFFFFF){unc=Number(cd.getBigUint64(q,true));q+=8}if(comp===0xFFFFFFFF){comp=Number(cd.getBigUint64(q,true));q+=8}if(off===0xFFFFFFFF){off=Number(cd.getBigUint64(q,true))}}x+=4+sz}
+    if(/(^|\/)export\.xml$/.test(name)){hit={meth,comp,unc,off};break}
+    p=xe+cl}
+  if(!hit)throw new Error('noxml');
+  const lh=await u8(hit.off,hit.off+30);const start=hit.off+30+lh.getUint16(26,true)+lh.getUint16(28,true);
+  const raw=file.slice(start,start+hit.comp).stream();
+  if(hit.meth===0)return {stream:raw,size:hit.unc};
+  if(typeof DecompressionStream==='undefined')throw new Error('nodecomp');
+  return {stream:raw.pipeThrough(new DecompressionStream('deflate-raw')),size:hit.unc};
+}
+
 async function importAppleHealth(file){
   const prog=$('#ahprog');const cutoff=addDays(today(),-120);const acc={};const sleep={};const flows={};const lhs={};const mucus={};const wk={};let n=0;
   const put=(date,k,v,mode)=>{const a=(acc[date]=acc[date]||{});const o=(a[k]=a[k]||{s:0,c:0,last:null});o.s+=v;o.c++;o.last=v;o.mode=mode};
@@ -1922,11 +1946,14 @@ async function importAppleHealth(file){
     if(type==='HKCategoryTypeIdentifierCervicalMucusQuality'){const v=attr(rec,'value')||'';mucus[date]=/EggWhite/.test(v)?'egg':/Creamy/.test(v)?'creamy':/Sticky/.test(v)?'sticky':/Dry/.test(v)?'dry':'';return}
   };
   try{
-    const reader=file.stream().pipeThrough(new TextDecoderStream()).getReader();let buf='',read=0;
+    let src={stream:null,size:file.size};const isZip=/\.zip$/i.test(file.name)||/zip/.test(file.type);
+    if(isZip){prog.textContent='Άνοιγμα του export.zip…';try{src=await zipEntryStream(file)}catch(z){prog.textContent=z.message==='noxml'?'Δεν βρέθηκε export.xml μέσα στο zip. Βεβαιώσου ότι είναι η εξαγωγή της εφαρμογής Υγεία.':z.message==='nodecomp'?'Η συσκευή σου δεν μπορεί να ανοίξει zip. Ενημέρωσε το iOS ή άνοιξε πρώτα το zip στα Αρχεία και διάλεξε το export.xml.':'Το αρχείο δεν είναι έγκυρο zip.';return}}
+    else src.stream=file.stream();
+    const reader=src.stream.pipeThrough(new TextDecoderStream()).getReader();let buf='',read=0;
     while(true){const {done,value}=await reader.read();if(done)break;read+=value.length;buf+=value;
       let i;while(true){const r1=buf.indexOf('<Record '),w1=buf.indexOf('<Workout ');i=r1<0?w1:w1<0?r1:Math.min(r1,w1);if(i<0)break;const j=buf.indexOf('>',i);if(j<0)break;const tag=buf.slice(i+1,j);buf=buf.slice(j+1);handle(tag.startsWith('Record')?tag.slice(7):tag)}
       if(buf.length>2e6)buf=buf.slice(-1e5);
-      prog.textContent='Ανάγνωση… '+Math.min(99,Math.round(read/file.size*100))+'% · '+n+' μετρήσεις';}
+      prog.textContent='Ανάγνωση… '+Math.min(99,Math.round(read/(src.size||file.size)*100))+'% · '+n+' μετρήσεις';}
   }catch(e){prog.textContent='Δεν ήταν δυνατή η ανάγνωση του αρχείου. Βεβαιώσου ότι επέλεξες το export.xml.';return}
   const B=BD();let nd=0;
   Object.entries(acc).forEach(([d,a])=>{const o=B.days[d]=B.days[d]||{};Object.entries(a).forEach(([k,x])=>{o[k]=x.mode==='sum'?Math.round(x.s):x.mode==='last'?Math.round(x.last*100)/100:Math.round(x.s/x.c*10)/10});o.src='apple';nd++});
