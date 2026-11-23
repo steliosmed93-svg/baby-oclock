@@ -1275,7 +1275,7 @@ function inboxItem(i){
   if(i.type==='meds')body=`<table>${(i.items||[]).map(m=>`<tr><td><b>${esc(m.name)}</b> ${esc(m.dose||'')}</td><td>${esc(m.times||'')}</td><td class="small">${m.start?fmt(m.start):''}${m.end?' έως '+fmt(m.end):''}</td></tr>`).join('')}</table>`;
   if(i.type==='scan')body=`<p class="small">${fmt(i.date)}: Δεξιά ${esc(i.right||'-')} · Αριστερά ${esc(i.left||'-')} mm · Ενδομήτριο ${esc(i.endo||'-')} mm${i.e2?' · E2 '+esc(i.e2):''}</p>${i.notes?`<p class="small"><b>Οδηγίες:</b> ${esc(i.notes)}</p>`:''}`;
   if(i.type==='appt')body=`<p class="small"><b>${esc(i.title)}</b>: ${fmtL(i.date)}${i.time?', '+esc(i.time):''}</p>`;
-  if(i.type==='plan')body=`<p class="small">${[['trigger','Trigger'],['opu','Ωοληψία'],['transfer','Εμβρυομεταφορά'],['beta','β-hCG']].filter(([k])=>i[k]).map(([k,l])=>l+': <b>'+(k==='trigger'?fmtDT(i[k]):fmtL(i[k]))+'</b>').join('<br>')}</p>`;
+  if(i.type==='plan')body=`${i.protoName?`<p class="small">Πρωτόκολλο: <b>${esc(i.protoName)}</b>${i.start?' · Έναρξη: <b>'+fmtL(i.start)+'</b>':''}</p>`:''}${i.note?`<p class="small">${esc(i.note)}</p>`:''}<p class="small">${[['trigger','Trigger'],['opu','Ωοληψία'],['transfer','Εμβρυομεταφορά'],['beta','β-hCG']].filter(([k])=>i[k]).map(([k,l])=>l+': <b>'+(k==='trigger'?fmtDT(i[k]):fmtL(i[k]))+'</b>').join('<br>')}</p>`;
   if(i.type==='msg'||i.type==='cheer')body=`<p${i.type==='cheer'?' style="font-size:1.1rem"':''}>${esc(i.text).replace(/\n/g,'<br>')}</p>`;
   if(i.type==='lab')body=`<p class="small">${[['eggs','Ωάρια'],['mii','Ώριμα'],['fert','Γονιμοποιήθηκαν'],['d3','Έμβρυα 3ης'],['blast','Βλαστοκύστες'],['frozen','Κατεψυγμένα'],['euploid','Ευπλοειδή']].filter(([k])=>i[k]!==''&&i[k]!=null).map(([k,l])=>l+': <b>'+esc(i[k])+'</b>').join(' · ')}</p>${i.text?`<p class="small">${esc(i.text)}</p>`:''}`;
   const can=['meds','scan','appt','plan','lab'].includes(i.type);
@@ -1287,7 +1287,7 @@ async function inboxImport(id){
   if(i.type==='meds')(i.items||[]).forEach(m=>S.meds.push({id:uid(),name:m.name,dose:m.dose||'',times:m.times||'',start:m.start||today(),end:m.end||'',type:m.type||'inj',notes:m.notes||('Από '+(i.fromName||'τον γιατρό'))}));
   if(i.type==='scan')S.scans.push({id:uid(),date:i.date,right:i.right||'',left:i.left||'',endo:i.endo||'',e2:i.e2||'',notes:i.notes||''});
   if(i.type==='appt'){S.cycle.appointments=S.cycle.appointments||[];S.cycle.appointments.push({id:uid(),title:i.title,date:i.date,time:i.time||''})}
-  if(i.type==='plan')['trigger','opu','transfer','beta'].forEach(k=>{if(i[k])S.cycle[k]=i[k]});
+  if(i.type==='plan'){if(i.protocol&&PROTOCOLS[i.protocol])S.cycle.protocol=i.protocol;['start','trigger','opu','transfer','beta'].forEach(k=>{if(i[k])S.cycle[k]=i[k]})}
   if(i.type==='lab'){const L=LAB();let r=labCur();if(!r){r={id:uid(),opu:S.cycle.opu||today(),method:'',blasts:[],updates:[]};L.recs.push(r);L.cur=r.id}['eggs','mii','fert','d3','blast','euploid','frozen'].forEach(k=>{if(i[k]!==''&&i[k]!=null)r[k]=i[k]});r.updates=r.updates||[];r.updates.push({date:today(),text:i.text||'Ενημέρωση αριθμών',from:i.fromName||''})}
   save();try{await DB.collection('care').doc(USER.uid).collection('inbox').doc(id).update({imported:true,read:true})}catch(e){}
   toast('Προστέθηκε ✓');
@@ -1301,7 +1301,7 @@ V.care=()=>{
    <div class="card"><h2>Σύνδεση με νέο γιατρό</h2>
     ${lc?`<p class="small muted">Δώσε αυτόν τον κωδικό στον γιατρό σου (ισχύει έως ${fmt(ymd(new Date(lc.exp)))}):</p><div class="codebox">${lc.c}</div>
       <div class="row" style="justify-content:center"><button class="btn alt sm" data-a="codeshare">📤 Αποστολή στον γιατρό</button><button class="btn ghost" data-a="gencode">Νέος κωδικός</button></div>
-      <p class="small muted" style="margin-top:8px">Ο γιατρός ανοίγει την πύλη γιατρών, συνδέεται με Google και βάζει τον κωδικό.</p>`:`<p>Δημιούργησε έναν κωδικό μίας χρήσης και δώσ' τον στον γυναικολόγο σου.</p><button class="btn coral" data-a="gencode">Δημιουργία κωδικού</button>`}
+      <p class="small muted" style="margin-top:8px">Ο γιατρός βάζει τον κωδικό στον φάκελό σου στην εφαρμογή «Πρωτόκολλα Εξωσωματικής» ή στην πύλη γιατρών.</p>`:`<p>Δημιούργησε έναν κωδικό μίας χρήσης και δώσ' τον στον γυναικολόγο σου.</p><button class="btn coral" data-a="gencode">Δημιουργία κωδικού</button>`}
    </div>
    <div class="card"><h2>Συνδεδεμένοι γιατροί</h2>
     ${CARE.doctors.filter(d=>d.role!=='partner').length?CARE.doctors.filter(d=>d.role!=='partner').map(d=>`<div class="item"><span><b>${esc(d.name||'Γιατρός')}</b><br><span class="small muted">${esc(d.email||'')} · από ${fmt(ymd(new Date(d.created||Date.now())))}</span></span><button class="btn ghost" data-a="docrevoke" data-id="${d.id}">Αφαίρεση</button></div>`).join(''):'<p class="muted small">Κανένας ακόμη.</p>'}
